@@ -1,0 +1,252 @@
+<?php
+
+use App\Livewire\ImageUploader;
+use App\Livewire\ImageSearch;
+use App\Livewire\EnhancedImageGallery;
+use App\Models\ImageFile;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
+use Livewire\Livewire;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
+
+describe('Full System Integration Tests', function () {
+    
+    beforeEach(function () {
+        Storage::fake('public');
+        
+        Http::fake([
+            '*/health' => Http::response(['status' => 'healthy'], 200),
+            '*/analyze' => Http::response([
+                'description' => 'A beautiful sunset over mountains',
+                'detailed_description' => 'A stunning photograph showing golden hour light cascading over mountain peaks',
+                'meta_tags' => ['sunset', 'mountains', 'nature', 'landscape'],
+                'embedding' => array_fill(0, 512, 0.5),
+                'face_count' => 0,
+                'face_encodings' => [],
+            ], 200),
+            '*/embed-text' => Http::response([
+                'embedding' => array_fill(0, 512, 0.5),
+            ], 200),
+        ]);
+    });
+
+    it('completes full workflow: upload, search, favorite, delete, restore', function () {
+        // Step 1: Upload an image
+        $file = UploadedFile::fake()->image('sunset.jpg');
+        
+        Livewire::test(ImageUploader::class)
+            ->set('images', [$file])
+            ->call('processImages')
+            ->assertHasNoErrors();
+
+        expect(ImageFile::count())->toBe(1);
+        
+        $image = ImageFile::first();
+        expect($image->description)->toBe('A beautiful sunset over mountains')
+            ->and($image->meta_tags)->toContain('sunset');
+
+        // Step 2: Search for the uploaded image
+        Livewire::test(ImageSearch::class)
+            ->set('query', 'sunset mountains')
+            ->call('search')
+            ->assertSet('results', function ($results) {
+                return count($results) > 0;
+            });
+
+        // Step 3: Favorite the image
+        Livewire::test(EnhancedImageGallery::class)
+            ->call('toggleFavorite', $image->id);
+
+        expect($image->fresh()->is_favorite)->toBeTrue();
+
+        // Step 4: View favorites
+        Livewire::test(EnhancedImageGallery::class)
+            ->call('toggleFavorites')
+            ->assertCount('images', 1);
+
+        // Step 5: Delete the image
+        Livewire::test(EnhancedImageGallery::class)
+            ->call('toggleFavorites') // Back to all view
+            ->call('deleteImage', $image->id);
+
+        expect(ImageFile::count())->toBe(0)
+            ->and(ImageFile::withTrashed()->count())->toBe(1);
+
+        // Step 6: View trash
+        Livewire::test(EnhancedImageGallery::class)
+            ->call('toggleTrash')
+            ->assertCount('images', 1);
+
+        // Step 7: Restore from trash
+        Livewire::test(EnhancedImageGallery::class)
+            ->call('restoreImage', $image->id);
+
+        expect(ImageFile::count())->toBe(1);
+    });
+
+    it('handles bulk operations workflow', function () {
+        // Upload multiple images
+        $files = [
+            UploadedFile::fake()->image('photo1.jpg'),
+            UploadedFile::fake()->image('photo2.jpg'),
+            UploadedFile::fake()->image('photo3.jpg'),
+        ];
+        
+        Livewire::test(ImageUploader::class)
+            ->set('images', $files)
+            ->call('processImages');
+
+        expect(ImageFile::count())->toBe(3);
+
+        // Bulk favorite
+        $ids = ImageFile::pluck('id')->toArray();
+        
+        Livewire::test(EnhancedImageGallery::class)
+            ->call('toggleSelectionMode')
+            ->set('selectedIds', $ids)
+            ->call('bulkFavorite');
+
+        expect(ImageFile::where('is_favorite', true)->count())->toBe(3);
+
+        // Bulk delete
+        Livewire::test(EnhancedImageGallery::class)
+            ->call('toggleSelectionMode')
+            ->call('selectAll')
+            ->call('bulkDelete');
+
+        expect(ImageFile::count())->toBe(0)
+            ->and(ImageFile::onlyTrashed()->count())->toBe(3);
+    });
+
+    it('maintains metadata through full lifecycle', function () {
+        $file = UploadedFile::fake()->image('photo.jpg', 1920, 1080);
+        
+        Livewire::test(ImageUploader::class)
+            ->set('images', [$file])
+            ->call('processImages');
+
+        $image = ImageFile::first();
+
+        // Check all metadata is preserved
+        expect($image->original_filename)->toBe('photo.jpg')
+            ->and($image->description)->toBe('A beautiful sunset over mountains')
+            ->and($image->detailed_description)->not->toBeNull()
+            ->and($image->meta_tags)->toBeArray()
+            ->and($image->embedding)->not->toBeNull()
+            ->and($image->file_size)->toBeGreaterThan(0);
+
+        // Delete and restore
+        $image->delete();
+        $image->restore();
+
+        // Metadata should still be intact
+        $image = $image->fresh();
+        expect($image->original_filename)->toBe('photo.jpg')
+            ->and($image->description)->toBe('A beautiful sunset over mountains')
+            ->and($image->meta_tags)->toBeArray();
+    });
+
+    it('search results match uploaded images', function () {
+        // Upload images with specific descriptions
+        Http::fake([
+            '*/analyze' => Http::sequence()
+                ->push([
+                    'description' => 'A sunset over mountains',
+                    'detailed_description' => 'Beautiful sunset',
+                    'meta_tags' => ['sunset', 'mountains'],
+                    'embedding' => array_fill(0, 512, 0.5),
+                    'face_count' => 0,
+                    'face_encodings' => [],
+                ])
+                ->push([
+                    'description' => 'A portrait of a person',
+                    'detailed_description' => 'Professional portrait',
+                    'meta_tags' => ['portrait', 'people'],
+                    'embedding' => array_fill(0, 512, 0.1),
+                    'face_count' => 1,
+                    'face_encodings' => [],
+                ]),
+            '*/embed-text' => Http::response([
+                'embedding' => array_fill(0, 512, 0.5), // Matches sunset
+            ], 200),
+        ]);
+
+        $files = [
+            UploadedFile::fake()->image('sunset.jpg'),
+            UploadedFile::fake()->image('portrait.jpg'),
+        ];
+        
+        Livewire::test(ImageUploader::class)
+            ->set('images', $files)
+            ->call('processImages');
+
+        // Search for sunset
+        $component = Livewire::test(ImageSearch::class)
+            ->set('query', 'sunset mountains')
+            ->call('search');
+
+        // Should find the sunset image with higher similarity
+        expect($component->results)->toHaveCount(2);
+    });
+
+    it('handles error recovery gracefully', function () {
+        // Simulate AI service failure
+        Http::fake([
+            '*/analyze' => Http::response([], 500),
+        ]);
+
+        $file = UploadedFile::fake()->image('test.jpg');
+        
+        Livewire::test(ImageUploader::class)
+            ->set('images', [$file])
+            ->call('processImages')
+            ->assertCount('errors_list', 1);
+
+        // No images should be created
+        expect(ImageFile::count())->toBe(0);
+        
+        // File should still be uploaded to storage
+        Storage::disk('public')->assertExists('images/' . $file->hashName());
+    });
+
+    it('concurrent operations maintain data integrity', function () {
+        // Create images
+        ImageFile::factory()->count(10)->create();
+
+        // Simulate concurrent operations
+        $image1 = ImageFile::find(1);
+        $image2 = ImageFile::find(2);
+
+        // Toggle favorites concurrently
+        Livewire::test(EnhancedImageGallery::class)
+            ->call('toggleFavorite', $image1->id);
+        
+        Livewire::test(EnhancedImageGallery::class)
+            ->call('toggleFavorite', $image2->id);
+
+        // Both should be favorited
+        expect($image1->fresh()->is_favorite)->toBeTrue()
+            ->and($image2->fresh()->is_favorite)->toBeTrue()
+            ->and(ImageFile::where('is_favorite', true)->count())->toBe(2);
+    });
+
+    it('preserves sorting and filtering through operations', function () {
+        ImageFile::factory()->count(5)->create(['is_favorite' => true]);
+        ImageFile::factory()->count(5)->create(['is_favorite' => false]);
+
+        // Filter favorites and delete one
+        $favoriteId = ImageFile::where('is_favorite', true)->first()->id;
+        
+        Livewire::test(EnhancedImageGallery::class)
+            ->call('toggleFavorites')
+            ->assertCount('images', 5)
+            ->call('deleteImage', $favoriteId)
+            ->assertCount('images', 4);
+
+        expect(ImageFile::where('is_favorite', true)->count())->toBe(4);
+    });
+});
+

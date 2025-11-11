@@ -1,0 +1,341 @@
+version: '3.8'
+
+services:
+  # PostgreSQL with pgvector extension
+  db:
+    image: ankane/pgvector:latest
+    container_name: avinash-eye-db
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-avinash_eye}
+      POSTGRES_USER: ${DB_USERNAME:-avinash}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=en_US.UTF-8"
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - avinash-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-avinash} -d ${DB_DATABASE:-avinash_eye}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Ollama service for advanced AI capabilities
+  ollama:
+    image: ollama/ollama:latest
+    container_name: avinash-eye-ollama
+    ports:
+      - "${OLLAMA_PORT:-11434}:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+      - ./docker/ollama/init-models.sh:/init-models.sh:ro
+    networks:
+      - avinash-network
+    restart: unless-stopped
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        # Start ollama in background
+        /bin/ollama serve &
+        OLLAMA_PID=$!
+        
+        # Wait for ollama to be ready
+        echo "Waiting for Ollama to start..."
+        until curl -f http://localhost:11434/api/tags >/dev/null 2>&1; do
+          sleep 2
+        done
+        
+        echo "Ollama is ready! Pulling models in background..."
+        
+        # Pull models in background (non-blocking)
+        (
+          echo "📥 Pulling LLaVA model (recommended for image analysis)..."
+          ollama pull llava 2>&1 | grep -E "(pulling|success|already)" || true
+          
+          echo "✅ Model pulling complete!"
+          echo "🎉 Ollama is ready with all models!"
+        ) &
+        
+        # Keep ollama running
+        wait $OLLAMA_PID
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+        reservations:
+          memory: 4G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Python FastAPI service for AI operations
+  python-ai:
+    build:
+      context: ./python-ai
+      dockerfile: Dockerfile
+    container_name: avinash-eye-python-ai
+    ports:
+      - "${PYTHON_AI_PORT:-8000}:8000"
+    volumes:
+      - ./storage/app/public/images:/app/shared:rw
+      - ./python-ai:/app:rw
+      - model-cache:/root/.cache/huggingface
+      - training-data:/app/training_data:rw
+      - ./storage/app/training:/app/shared_training:rw
+    networks:
+      - avinash-network
+    environment:
+      - TRANSFORMERS_CACHE=/root/.cache/huggingface
+      - HF_HOME=/root/.cache/huggingface
+      - OLLAMA_HOST=http://ollama:11434
+      - AUTO_TRAIN=${AUTO_TRAIN:-true}
+      - WORKERS=${PYTHON_WORKERS:-4}
+      - LOG_LEVEL=${PYTHON_LOG_LEVEL:-info}
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 20s
+      retries: 5
+      start_period: 300s
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+        reservations:
+          memory: 4G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Laravel Application (PHP-FPM)
+  laravel-app:
+    build:
+      context: .
+      dockerfile: ./docker/laravel/Dockerfile
+    container_name: avinash-eye-laravel
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html:rw
+      - ./storage/app/public/images:/var/www/html/storage/app/public/images:rw
+      - ./docker/laravel/init.sh:/init.sh:ro
+    networks:
+      - avinash-network
+    environment:
+      - APP_NAME=${APP_NAME:-Avinash-EYE}
+      - APP_ENV=${APP_ENV:-production}
+      - APP_KEY=${APP_KEY}
+      - APP_DEBUG=${APP_DEBUG:-false}
+      - APP_URL=${APP_URL:-http://localhost:8080}
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=${DB_DATABASE:-avinash_eye}
+      - DB_USERNAME=${DB_USERNAME:-avinash}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
+      - AI_API_URL=http://python-ai:8000
+      - AI_TIMEOUT=${AI_TIMEOUT:-300}
+      - QUEUE_CONNECTION=${QUEUE_CONNECTION:-database}
+      - CACHE_DRIVER=${CACHE_DRIVER:-file}
+      - SESSION_DRIVER=${SESSION_DRIVER:-file}
+    depends_on:
+      db:
+        condition: service_healthy
+      python-ai:
+        condition: service_started
+    restart: unless-stopped
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        echo "🚀 Starting Laravel initialization..."
+        
+        # Wait for database to be fully ready
+        until php artisan db:show >/dev/null 2>&1; do
+          echo "⏳ Waiting for database connection..."
+          sleep 2
+        done
+        
+        echo "✅ Database connected!"
+        
+        # Run migrations if needed (safe to run multiple times)
+        echo "📊 Running database migrations..."
+        php artisan migrate --force 2>&1 | grep -v "Nothing to migrate" || true
+        
+        # Seed settings if needed
+        echo "⚙️  Checking settings..."
+        php artisan db:seed --class=SettingsSeeder --force 2>&1 | grep -v "already" || true
+        
+        # Create storage link if needed
+        echo "🔗 Creating storage link..."
+        php artisan storage:link 2>&1 | grep -v "already exists" || true
+        
+        # Optimize for production
+        if [ "$APP_ENV" = "production" ]; then
+          echo "⚡ Optimizing for production..."
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
+        fi
+        
+        # Set proper permissions
+        chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+        chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+        
+        echo "✅ Laravel initialization complete!"
+        echo "🎉 Application is ready!"
+        
+        # Start PHP-FPM
+        php-fpm
+    healthcheck:
+      test: ["CMD-SHELL", "php artisan db:show || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Queue Worker for background jobs
+  queue-worker:
+    build:
+      context: .
+      dockerfile: ./docker/laravel/Dockerfile
+    container_name: avinash-eye-queue-worker
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html:rw
+      - ./storage/app/public/images:/var/www/html/storage/app/public/images:rw
+    networks:
+      - avinash-network
+    environment:
+      - APP_NAME=${APP_NAME:-Avinash-EYE}
+      - APP_ENV=${APP_ENV:-production}
+      - APP_KEY=${APP_KEY}
+      - APP_DEBUG=${APP_DEBUG:-false}
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=${DB_DATABASE:-avinash_eye}
+      - DB_USERNAME=${DB_USERNAME:-avinash}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
+      - AI_API_URL=http://python-ai:8000
+      - AI_TIMEOUT=${AI_TIMEOUT:-300}
+      - QUEUE_CONNECTION=${QUEUE_CONNECTION:-database}
+    depends_on:
+      laravel-app:
+        condition: service_healthy
+      python-ai:
+        condition: service_healthy
+    restart: unless-stopped
+    command: >
+      bash -c "
+        echo '🔄 Starting queue worker...';
+        until php artisan db:show >/dev/null 2>&1; do
+          echo '⏳ Waiting for database...';
+          sleep 2;
+        done;
+        echo '✅ Queue worker starting!';
+        php artisan queue:work database --queue=image-processing --tries=3 --timeout=300 --sleep=3 --max-jobs=100 --max-time=3600
+      "
+    healthcheck:
+      test: ["CMD-SHELL", "ps aux | grep 'queue:work' | grep -v grep || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Nginx web server
+  nginx:
+    image: nginx:alpine
+    container_name: avinash-eye-nginx
+    ports:
+      - "${NGINX_PORT:-8080}:80"
+    volumes:
+      - .:/var/www/html:ro
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./storage/app/public:/var/www/html/storage/app/public:ro
+    networks:
+      - avinash-network
+    depends_on:
+      laravel-app:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 64M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  pgdata:
+    driver: local
+  model-cache:
+    driver: local
+  ollama-data:
+    driver: local
+  training-data:
+    driver: local
+
+networks:
+  avinash-network:
+    driver: bridge

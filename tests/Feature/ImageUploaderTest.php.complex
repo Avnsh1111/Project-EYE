@@ -1,0 +1,178 @@
+<?php
+
+use App\Livewire\ImageUploader;
+use App\Models\ImageFile;
+use App\Services\AiService;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
+use Livewire\Livewire;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
+
+describe('ImageUploader Component', function () {
+    
+    beforeEach(function () {
+        Storage::fake('public');
+        
+        Http::fake([
+            '*/analyze' => Http::response([
+                'description' => 'A test image',
+                'detailed_description' => 'A detailed test image description',
+                'meta_tags' => ['test', 'image'],
+                'embedding' => array_fill(0, 512, 0.1),
+                'face_count' => 0,
+                'face_encodings' => [],
+            ], 200),
+        ]);
+    });
+
+    it('renders successfully', function () {
+        Livewire::test(ImageUploader::class)
+            ->assertStatus(200);
+    });
+
+    it('can upload a single image', function () {
+        $file = UploadedFile::fake()->image('test.jpg');
+
+        Livewire::test(ImageUploader::class)
+            ->set('images', [$file])
+            ->call('processImages')
+            ->assertHasNoErrors();
+
+        expect(ImageFile::count())->toBe(1);
+        
+        $image = ImageFile::first();
+        expect($image->original_filename)->toBe('test.jpg')
+            ->and($image->description)->toBe('A test image')
+            ->and($image->embedding)->not->toBeNull();
+    });
+
+    it('can upload multiple images', function () {
+        $files = [
+            UploadedFile::fake()->image('test1.jpg'),
+            UploadedFile::fake()->image('test2.jpg'),
+            UploadedFile::fake()->image('test3.jpg'),
+        ];
+
+        Livewire::test(ImageUploader::class)
+            ->set('images', $files)
+            ->call('processImages')
+            ->assertHasNoErrors();
+
+        expect(ImageFile::count())->toBe(3);
+    });
+
+    it('validates image file types', function () {
+        $file = UploadedFile::fake()->create('document.pdf');
+
+        Livewire::test(ImageUploader::class)
+            ->set('images', [$file])
+            ->call('processImages')
+            ->assertHasErrors('images.*');
+    });
+
+    it('validates maximum file size', function () {
+        $file = UploadedFile::fake()->image('large.jpg')->size(15000); // 15MB
+
+        Livewire::test(ImageUploader::class)
+            ->set('images', [$file])
+            ->call('processImages')
+            ->assertHasErrors('images.*');
+    });
+
+    it('extracts EXIF metadata from images', function () {
+        $file = UploadedFile::fake()->image('photo.jpg');
+
+        Livewire::test(ImageUploader::class)
+            ->set('images', [$file])
+            ->call('processImages');
+
+        $image = ImageFile::first();
+        
+        expect($image->original_filename)->toBe('photo.jpg')
+            ->and($image->mime_type)->toContain('image')
+            ->and($image->file_size)->toBeGreaterThan(0);
+    });
+
+    it('stores images in correct directory', function () {
+        $file = UploadedFile::fake()->image('test.jpg');
+
+        Livewire::test(ImageUploader::class)
+            ->set('images', [$file])
+            ->call('processImages');
+
+        $image = ImageFile::first();
+        
+        Storage::disk('public')->assertExists(str_replace('public/', '', $image->file_path));
+    });
+
+    it('shows processing progress', function () {
+        $files = [
+            UploadedFile::fake()->image('test1.jpg'),
+            UploadedFile::fake()->image('test2.jpg'),
+        ];
+
+        Livewire::test(ImageUploader::class)
+            ->set('images', $files)
+            ->call('processImages')
+            ->assertSet('processing', false)
+            ->assertSet('progress.total', 2)
+            ->assertSet('progress.current', 2);
+    });
+
+    it('displays success results after processing', function () {
+        $file = UploadedFile::fake()->image('test.jpg');
+
+        Livewire::test(ImageUploader::class)
+            ->set('images', [$file])
+            ->call('processImages')
+            ->assertSet('results', function ($results) {
+                return count($results) === 1 && isset($results[0]['url']);
+            });
+    });
+
+    it('can clear results and reset form', function () {
+        $file = UploadedFile::fake()->image('test.jpg');
+
+        Livewire::test(ImageUploader::class)
+            ->set('images', [$file])
+            ->call('processImages')
+            ->assertCount('results', 1)
+            ->call('clear')
+            ->assertSet('images', [])
+            ->assertSet('results', [])
+            ->assertSet('errors_list', []);
+    });
+
+    it('handles AI service errors gracefully', function () {
+        Http::fake([
+            '*/analyze' => Http::response([], 500),
+        ]);
+
+        $file = UploadedFile::fake()->image('test.jpg');
+
+        Livewire::test(ImageUploader::class)
+            ->set('images', [$file])
+            ->call('processImages')
+            ->assertCount('errors_list', 1);
+    });
+
+    it('saves all metadata fields', function () {
+        $file = UploadedFile::fake()->image('test.jpg', 800, 600);
+
+        Livewire::test(ImageUploader::class)
+            ->set('images', [$file])
+            ->call('processImages');
+
+        $image = ImageFile::first();
+        
+        expect($image->file_path)->not->toBeNull()
+            ->and($image->original_filename)->not->toBeNull()
+            ->and($image->mime_type)->not->toBeNull()
+            ->and($image->description)->not->toBeNull()
+            ->and($image->embedding)->not->toBeNull();
+    });
+});
+

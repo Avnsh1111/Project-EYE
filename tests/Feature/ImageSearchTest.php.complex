@@ -1,0 +1,154 @@
+<?php
+
+use App\Livewire\ImageSearch;
+use App\Models\ImageFile;
+use Illuminate\Support\Facades\Http;
+use Livewire\Livewire;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
+
+describe('ImageSearch Component', function () {
+    
+    beforeEach(function () {
+        Http::fake([
+            '*/embed-text' => Http::response([
+                'embedding' => array_fill(0, 512, 0.3),
+            ], 200),
+        ]);
+
+        // Create test images with embeddings
+        ImageFile::factory()->count(5)->create([
+            'embedding' => array_fill(0, 512, 0.3),
+            'description' => 'Test image',
+        ]);
+    });
+
+    it('renders successfully', function () {
+        Livewire::test(ImageSearch::class)
+            ->assertStatus(200);
+    });
+
+    it('can search images by text query', function () {
+        Livewire::test(ImageSearch::class)
+            ->set('query', 'sunset over mountains')
+            ->call('search')
+            ->assertSet('searching', false)
+            ->assertSet('results', function ($results) {
+                return is_array($results);
+            });
+    });
+
+    it('validates minimum query length', function () {
+        Livewire::test(ImageSearch::class)
+            ->set('query', 'ab')
+            ->call('search')
+            ->assertHasErrors('query');
+    });
+
+    it('requires query to be provided', function () {
+        Livewire::test(ImageSearch::class)
+            ->set('query', '')
+            ->call('search')
+            ->assertHasErrors('query');
+    });
+
+    it('displays search results with metadata', function () {
+        Livewire::test(ImageSearch::class)
+            ->set('query', 'test image')
+            ->call('search')
+            ->assertSet('results', function ($results) {
+                return count($results) > 0 
+                    && isset($results[0]['url'])
+                    && isset($results[0]['description'])
+                    && isset($results[0]['similarity']);
+            });
+    });
+
+    it('shows no results message when no matches found', function () {
+        // Create images with very different embeddings
+        ImageFile::query()->delete();
+        ImageFile::factory()->create([
+            'embedding' => array_fill(0, 512, 0.9),
+            'description' => 'Very different',
+        ]);
+
+        Http::fake([
+            '*/embed-text' => Http::response([
+                'embedding' => array_fill(0, 512, 0.1),
+            ], 200),
+        ]);
+
+        Livewire::test(ImageSearch::class)
+            ->set('query', 'something completely different')
+            ->call('search')
+            ->assertSet('results', []);
+    });
+
+    it('clears results when resetting', function () {
+        Livewire::test(ImageSearch::class)
+            ->set('query', 'test')
+            ->call('search')
+            ->assertCount('results', function ($count) {
+                return $count >= 0;
+            })
+            ->set('query', '')
+            ->assertSet('results', []);
+    });
+
+    it('handles AI service errors gracefully', function () {
+        Http::fake([
+            '*/embed-text' => Http::response([], 500),
+        ]);
+
+        Livewire::test(ImageSearch::class)
+            ->set('query', 'test query')
+            ->call('search')
+            ->assertSet('results', []);
+    });
+
+    it('displays similarity scores', function () {
+        Livewire::test(ImageSearch::class)
+            ->set('query', 'test image')
+            ->call('search')
+            ->assertSet('results', function ($results) {
+                if (empty($results)) {
+                    return true; // No results is valid
+                }
+                return isset($results[0]['similarity']);
+            });
+    });
+
+    it('limits results to maximum number', function () {
+        // Create many images
+        ImageFile::factory()->count(50)->create([
+            'embedding' => array_fill(0, 512, 0.3),
+        ]);
+
+        Livewire::test(ImageSearch::class)
+            ->set('query', 'test query')
+            ->call('search')
+            ->assertSet('results', function ($results) {
+                return count($results) <= 30; // Default limit
+            });
+    });
+
+    it('orders results by similarity descending', function () {
+        Livewire::test(ImageSearch::class)
+            ->set('query', 'test query')
+            ->call('search')
+            ->assertSet('results', function ($results) {
+                if (count($results) < 2) {
+                    return true;
+                }
+                // Check if sorted by similarity
+                for ($i = 0; $i < count($results) - 1; $i++) {
+                    if ($results[$i]['similarity'] < $results[$i + 1]['similarity']) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+    });
+});
+
