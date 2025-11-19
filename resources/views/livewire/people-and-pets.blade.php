@@ -146,7 +146,7 @@
             <p style="color: var(--text-secondary); margin-bottom: 2rem;">
                 Upload photos with people or pets to see them organized here!
             </p>
-            <a href="{{ route('upload') }}" class="btn btn-primary">
+            <a wire:navigate href="{{ route('instant-upload') }}" class="btn btn-primary">
                 <span class="material-symbols-outlined" style="font-size: 1.125rem;">add_photo_alternate</span>
                 Upload Photos
             </a>

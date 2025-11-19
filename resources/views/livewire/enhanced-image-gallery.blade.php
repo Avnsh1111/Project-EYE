@@ -68,7 +68,7 @@
             </button>
             
             <!-- Upload -->
-            <a href="{{ route('upload') }}" class="btn btn-primary">
+            <a wire:navigate href="{{ route('instant-upload') }}" class="btn btn-primary">
                 <span class="material-symbols-outlined" style="font-size: 1.125rem;">upload</span>
                 Upload
             </a>
@@ -172,7 +172,7 @@
                     Clear search
                 </button>
             @elseif (!$showTrash && !$showFavorites)
-                <a href="{{ route('upload') }}" class="btn btn-primary">
+                <a wire:navigate href="{{ route('instant-upload') }}" class="btn btn-primary">
                     <span class="material-symbols-outlined" style="font-size: 1.125rem;">upload</span>
                     Upload photos
                 </a>

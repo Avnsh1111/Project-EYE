@@ -125,7 +125,7 @@
             <h2 style="font-size: 1.25rem; font-weight: 500; color: #202124;">
                 Background Processing
             </h2>
-            <a href="{{ route('processing-status') }}" class="btn btn-secondary">
+            <a wire:navigate href="{{ route('processing-status') }}" class="btn btn-secondary">
                 <span class="material-symbols-outlined" style="font-size: 1.125rem;">query_stats</span>
                 View All Processing
             </a>
@@ -168,7 +168,7 @@
                         <li>AI-generated tags</li>
                     </ul>
                     <p style="margin: 0.5rem 0 0 0; color: var(--secondary-color);">
-                        You'll see real-time updates in the <a href="{{ route('processing-status') }}" style="color: var(--primary-color); text-decoration: underline;">Processing Status</a> page.
+                        You'll see real-time updates in the <a wire:navigate href="{{ route('processing-status') }}" style="color: var(--primary-color); text-decoration: underline;">Processing Status</a> page.
                     </p>
                 </div>
             </div>

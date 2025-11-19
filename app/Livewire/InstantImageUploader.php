@@ -6,8 +6,10 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Models\ImageFile;
 use App\Jobs\ProcessImageAnalysis;
+use App\Jobs\ProcessBatchImages;
 use App\Services\FileService;
 use App\Services\MetadataService;
+use App\Services\NodeImageProcessorService;
 use App\Repositories\ImageRepository;
 use Illuminate\Support\Facades\Log;
 
@@ -27,6 +29,7 @@ class InstantImageUploader extends Component
     protected FileService $fileService;
     protected MetadataService $metadataService;
     protected ImageRepository $imageRepository;
+    protected NodeImageProcessorService $nodeProcessor;
     
     /**
      * Boot the component.
@@ -34,11 +37,13 @@ class InstantImageUploader extends Component
     public function boot(
         FileService $fileService,
         MetadataService $metadataService,
-        ImageRepository $imageRepository
+        ImageRepository $imageRepository,
+        NodeImageProcessorService $nodeProcessor
     ) {
         $this->fileService = $fileService;
         $this->metadataService = $metadataService;
         $this->imageRepository = $imageRepository;
+        $this->nodeProcessor = $nodeProcessor;
     }
 
     protected function rules(): array
@@ -70,6 +75,9 @@ class InstantImageUploader extends Component
         $this->total_files = count($this->images);
         $this->uploaded_images = [];
 
+        $imageFileIds = [];
+        $useBatchProcessing = count($this->images) > 1 && $this->nodeProcessor->isAvailable();
+
         foreach ($this->images as $index => $image) {
             try {
                 // Use FileService to store the image
@@ -97,14 +105,12 @@ class InstantImageUploader extends Component
                 ];
 
                 $this->uploaded_count++;
+                $imageFileIds[] = $imageFile->id;
 
-                // Dispatch background job for deep AI analysis
-                ProcessImageAnalysis::dispatch($imageFile->id)
-                    ->onQueue('image-processing');
-
-                Log::info("Image uploaded instantly via services, queued for processing", [
+                Log::info("Image uploaded instantly via services", [
                     'image_id' => $imageFile->id,
-                    'filename' => $metadata['original_filename']
+                    'filename' => $metadata['original_filename'],
+                    'batch_mode' => $useBatchProcessing
                 ]);
 
             } catch (\Exception $e) {
@@ -113,6 +119,22 @@ class InstantImageUploader extends Component
                     'error' => $e->getMessage()
                 ]);
                 $this->addError('upload', "Failed to upload {$image->getClientOriginalName()}: {$e->getMessage()}");
+            }
+        }
+
+        // Dispatch processing jobs (all in background via queue)
+        if (!empty($imageFileIds)) {
+            if ($useBatchProcessing) {
+                // Dispatch batch processing job to queue (Node.js handles parallelization in background)
+                Log::info("Dispatching batch processing job for " . count($imageFileIds) . " images via Node.js (background)");
+                ProcessBatchImages::dispatch($imageFileIds)
+                    ->onQueue('image-processing');
+            } else {
+                // Use individual processing (fallback or single image) - use queue
+                foreach ($imageFileIds as $imageId) {
+                    ProcessImageAnalysis::dispatch($imageId)
+                        ->onQueue('image-processing');
+                }
             }
         }
 

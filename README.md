@@ -178,6 +178,68 @@ If you prefer manual control:
 
 ---
 
+## 🔐 Authentication & Default User
+
+### Creating Default User
+
+After running migrations, create a default admin user:
+
+**Option 1: Using Artisan Command (Recommended)**
+```bash
+docker compose exec laravel-app php artisan user:create-default
+```
+
+**Option 2: Using Seeder**
+```bash
+docker compose exec laravel-app php artisan db:seed --class=UserSeeder
+```
+
+**Option 3: With Custom Credentials**
+```bash
+docker compose exec laravel-app php artisan user:create-default \
+  --email=admin@example.com \
+  --password=YourSecurePassword123! \
+  --name="Admin User"
+```
+
+### Default Credentials
+
+The seeder uses these defaults (configurable via `.env`):
+- **Email**: `admin@avinash-eye.local`
+- **Password**: `Admin@123`
+- **Name**: `Administrator`
+
+### Environment Variables
+
+Add these to your `.env` file to customize default user:
+```env
+DEFAULT_USER_EMAIL=admin@yourdomain.com
+DEFAULT_USER_PASSWORD=YourSecurePassword123!
+DEFAULT_USER_NAME=Administrator
+```
+
+> **⚠️ Security Note**: Always change the default password after first login!
+
+### Authentication Features
+
+- ✅ Secure password hashing (bcrypt)
+- ✅ Rate limiting (5 attempts per email/IP)
+- ✅ Account locking after failed attempts
+- ✅ Password strength requirements
+- ✅ Remember me functionality
+- ✅ Password reset via email
+- ✅ Login attempt tracking
+- ✅ Session management
+
+### Accessing the System
+
+1. Navigate to: `http://localhost:8080`
+2. Click **Sign in** or visit `/login`
+3. Use your default credentials
+4. Change password immediately after first login
+
+---
+
 ## 📖 Complete Feature Guide
 
 ### 🖼️ Image Upload & Processing
@@ -486,6 +548,7 @@ Avinash-EYE/
 ├── .env.example                 # Environment template
 ├── .env.production              # 🏭 Production environment template
 ├── start-production.sh          # 🚀 One-command production deployment
+├── fresh-start.sh               # 🔄 Complete reset script (deletes all data)
 ├── setup-ollama.sh              # Ollama setup script
 ├── PRODUCTION_READY.md          # 📖 Production features guide
 └── README.md                    # This file
@@ -615,6 +678,36 @@ php artisan db:seed
 # Fresh install (⚠️ deletes all data)
 php artisan migrate:fresh --seed
 ```
+
+#### Complete System Reset
+```bash
+# Fresh Start Script (Recommended - with safety confirmation)
+./fresh-start.sh                 # Complete reset with confirmation prompt
+                                  # - Stops all containers
+                                  # - Removes Docker volumes (database, ollama)
+                                  # - Clears all uploaded images
+                                  # - Clears Laravel cache and logs
+                                  # - Rebuilds Docker images
+                                  # - Runs fresh migrations
+                                  # - Seeds default data (user, settings)
+                                  # - Restarts all services
+                                  # - Shows default login credentials
+
+# Manual Reset (Alternative)
+docker compose down -v            # Stop and remove volumes
+rm -rf storage/app/public/images/* # Clear images
+docker compose up -d --build      # Rebuild and start
+docker compose exec laravel-app php artisan migrate:fresh --seed
+```
+
+> **⚠️ Warning**: The fresh start script deletes **ALL** data including:
+> - All uploaded images
+> - Database data (all tables)
+> - All user accounts
+> - Cache files
+> - Docker volumes
+> 
+> Always backup important data before running `./fresh-start.sh`!
 
 #### Docker Operations
 ```bash

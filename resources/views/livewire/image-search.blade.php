@@ -178,7 +178,7 @@
             <div class="empty-state-icon">📸</div>
             <h3 class="empty-state-title">No photos to search</h3>
             <p class="empty-state-description">Upload some photos first to start searching</p>
-            <a href="{{ route('upload') }}" class="btn btn-primary">
+            <a wire:navigate href="{{ route('instant-upload') }}" class="btn btn-primary">
                 <span class="material-symbols-outlined" style="font-size: 1.125rem;">upload</span>
                 Upload photos
             </a>

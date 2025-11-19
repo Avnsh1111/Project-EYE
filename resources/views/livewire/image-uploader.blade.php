@@ -143,7 +143,7 @@
             <h2 style="font-size: 1.25rem; font-weight: 500; color: #202124;">
                 Analysis results
             </h2>
-            <a href="{{ route('gallery') }}" class="btn btn-secondary">
+            <a wire:navigate href="{{ route('gallery') }}" class="btn btn-secondary">
                 <span class="material-symbols-outlined" style="font-size: 1.125rem;">photo_library</span>
                 View in gallery
             </a>

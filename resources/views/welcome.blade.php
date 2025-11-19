@@ -13,14 +13,25 @@
 
     <!-- CTA Buttons -->
     <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-        <a href="{{ route('upload') }}" class="btn btn-primary" style="font-size: 1rem; padding: 0.875rem 2rem;">
-            <span class="material-symbols-outlined" style="font-size: 1.25rem;">upload</span>
-            Upload photos
-        </a>
-        <a href="{{ route('gallery') }}" class="btn btn-secondary" style="font-size: 1rem; padding: 0.875rem 2rem;">
-            <span class="material-symbols-outlined" style="font-size: 1.25rem;">photo_library</span>
-            View gallery
-        </a>
+        @auth
+            <a wire:navigate href="{{ route('instant-upload') }}" class="btn btn-primary" style="font-size: 1rem; padding: 0.875rem 2rem;">
+                <span class="material-symbols-outlined" style="font-size: 1.25rem;">upload</span>
+                Upload photos
+            </a>
+            <a wire:navigate href="{{ route('gallery') }}" class="btn btn-secondary" style="font-size: 1rem; padding: 0.875rem 2rem;">
+                <span class="material-symbols-outlined" style="font-size: 1.25rem;">photo_library</span>
+                View gallery
+            </a>
+        @else
+            <a wire:navigate href="{{ route('login') }}" class="btn btn-primary" style="font-size: 1rem; padding: 0.875rem 2rem;">
+                <span class="material-symbols-outlined" style="font-size: 1.25rem;">login</span>
+                Sign in
+            </a>
+            <a wire:navigate href="{{ route('register') }}" class="btn btn-secondary" style="font-size: 1rem; padding: 0.875rem 2rem;">
+                <span class="material-symbols-outlined" style="font-size: 1.25rem;">person_add</span>
+                Create account
+            </a>
+        @endauth
     </div>
 </div>
 

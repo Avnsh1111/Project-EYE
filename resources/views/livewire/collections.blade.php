@@ -46,7 +46,7 @@
             
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
                 @foreach ($faceCollections as $collection)
-                    <a href="{{ route('gallery') }}?faces={{ $collection['name'] }}" 
+                    <a wire:navigate href="{{ route('gallery') }}?faces={{ $collection['name'] }}" 
                        class="collection-card"
                        style="text-decoration: none; color: inherit; display: block; transition: var(--transition);">
                         <div class="card" style="padding: 0; overflow: hidden; cursor: pointer; transition: var(--transition);"
@@ -96,7 +96,7 @@
             
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
                 @foreach ($collections as $collection)
-                    <a href="{{ route('gallery') }}?q={{ urlencode($collection['slug']) }}" 
+                    <a wire:navigate href="{{ route('gallery') }}?q={{ urlencode($collection['slug']) }}" 
                        class="collection-card"
                        style="text-decoration: none; color: inherit; display: block; transition: var(--transition);">
                         <div class="card" style="padding: 0; overflow: hidden; cursor: pointer; transition: var(--transition);"
@@ -144,7 +144,7 @@
             <p class="empty-state-description">
                 Collections will appear here once your photos are analyzed by AI
             </p>
-            <a href="{{ route('gallery') }}" class="btn btn-primary">
+            <a wire:navigate href="{{ route('gallery') }}" class="btn btn-primary">
                 <span class="material-symbols-outlined" style="font-size: 1.125rem;">photo_library</span>
                 View Gallery
             </a>

@@ -26,7 +26,7 @@
                 </h3>
             </div>
             <div style="text-align: center;">
-                <div style="font-size: 2.5rem; font-weight: 700; color: #10b981; margin-bottom: 0.5rem; min-width: 120px; transition: all 0.3s ease;">
+                <div data-cpu-usage="{{ $systemStats['cpu']['usage'] ?? 0 }}" style="font-size: 2.5rem; font-weight: 700; color: #10b981; margin-bottom: 0.5rem; min-width: 120px; transition: all 0.3s ease;">
                     {{ number_format($systemStats['cpu']['usage'] ?? 0, 1) }}%
                 </div>
                 <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 1rem; min-height: 20px;">
@@ -49,7 +49,7 @@
                 </h3>
             </div>
             <div style="text-align: center;">
-                <div style="font-size: 2.5rem; font-weight: 700; color: #3b82f6; margin-bottom: 0.5rem; min-width: 120px; transition: all 0.3s ease;">
+                <div data-mem-usage="{{ $systemStats['memory']['percent'] ?? 0 }}" style="font-size: 2.5rem; font-weight: 700; color: #3b82f6; margin-bottom: 0.5rem; min-width: 120px; transition: all 0.3s ease;">
                     {{ number_format($systemStats['memory']['percent'] ?? 0, 1) }}%
                 </div>
                 <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 1rem; min-height: 20px;">
@@ -283,12 +283,45 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <script>
-    document.addEventListener('livewire:initialized', () => {
-        let resourcesChart = null;
-        let processingChart = null;
+    // Global chart instances
+    let resourcesChart = null;
+    let processingChart = null;
+    let chartInitialized = false;
+
+    // Function to initialize charts
+    function initializeCharts() {
+        // Destroy existing charts if they exist
+        if (resourcesChart) {
+            resourcesChart.destroy();
+            resourcesChart = null;
+        }
+        if (processingChart) {
+            processingChart.destroy();
+            processingChart = null;
+        }
+
+        // Check if Chart.js is loaded and canvas elements exist
+        if (typeof Chart === 'undefined') {
+            console.warn('Chart.js not loaded yet');
+            return;
+        }
+
+        const resourcesCanvas = document.getElementById('resourcesChart');
+        const processingCanvas = document.getElementById('processingChart');
+
+        if (!resourcesCanvas || !processingCanvas) {
+            console.warn('Chart canvas elements not found');
+            return;
+        }
+
+        // Get initial values from DOM
+        const cpuElement = document.querySelector('[data-cpu-usage]');
+        const memElement = document.querySelector('[data-mem-usage]');
+        const initialCpu = cpuElement ? parseFloat(cpuElement.getAttribute('data-cpu-usage') || 0) : 0;
+        const initialMem = memElement ? parseFloat(memElement.getAttribute('data-mem-usage') || 0) : 0;
 
         // CPU & Memory Chart
-        const resourcesCtx = document.getElementById('resourcesChart').getContext('2d');
+        const resourcesCtx = resourcesCanvas.getContext('2d');
         resourcesChart = new Chart(resourcesCtx, {
             type: 'line',
             data: {
@@ -296,7 +329,7 @@
                 datasets: [
                     {
                         label: 'CPU %',
-                        data: Array(20).fill(0),
+                        data: Array(20).fill(initialCpu),
                         borderColor: '#10b981',
                         backgroundColor: 'rgba(16, 185, 129, 0.1)',
                         tension: 0.4,
@@ -304,7 +337,7 @@
                     },
                     {
                         label: 'Memory %',
-                        data: Array(20).fill(0),
+                        data: Array(20).fill(initialMem),
                         borderColor: '#3b82f6',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
                         tension: 0.4,
@@ -337,7 +370,7 @@
         });
 
         // Processing History Chart
-        const processingCtx = document.getElementById('processingChart').getContext('2d');
+        const processingCtx = processingCanvas.getContext('2d');
         const processingHistory = @json($processingHistory);
         
         processingChart = new Chart(processingCtx, {
@@ -371,32 +404,128 @@
             }
         });
 
-        // Update charts on Livewire update (smooth, no jumping)
-        document.addEventListener('livewire:update', () => {
-            setTimeout(() => {
-                // Update resource chart with new data
-                const cpuUsage = {{ $systemStats['cpu']['usage'] ?? 0 }};
-                const memUsage = {{ $systemStats['memory']['percent'] ?? 0 }};
+        chartInitialized = true;
+    }
 
-                if (resourcesChart) {
-                    resourcesChart.data.datasets[0].data.push(cpuUsage);
-                    resourcesChart.data.datasets[1].data.push(memUsage);
-
-                    if (resourcesChart.data.datasets[0].data.length > 20) {
-                        resourcesChart.data.datasets[0].data.shift();
-                        resourcesChart.data.datasets[1].data.shift();
-                    }
-
-                    // Update without animation to prevent jumping
-                    resourcesChart.update('none');
-                }
-            }, 100);
-        });
-
-        // Initial update after 1 second
+    // Initialize on page load
+    document.addEventListener('livewire:initialized', () => {
+        // Wait a bit for DOM to be ready
         setTimeout(() => {
-            @this.dispatch('stats-updated');
+            initializeCharts();
+        }, 100);
+    });
+
+    // Reinitialize charts after navigation (wire:navigate)
+    document.addEventListener('livewire:navigated', () => {
+        // Check if we're on the system-monitor page
+        if (window.location.pathname.includes('system-monitor')) {
+            // Wait for DOM to update
+            setTimeout(() => {
+                initializeCharts();
+            }, 100);
+        }
+    });
+
+    // Update charts on Livewire update (smooth, no jumping)
+    // Use multiple event listeners to catch updates reliably
+    function updateChartsFromDOM() {
+        if (!chartInitialized || !resourcesChart) {
+            return;
+        }
+
+        // Only update if we're on the system-monitor page
+        if (!window.location.pathname.includes('system-monitor')) {
+            return;
+        }
+
+        // Read current values from DOM data attributes
+        const cpuElement = document.querySelector('[data-cpu-usage]');
+        const memElement = document.querySelector('[data-mem-usage]');
+        
+        if (!cpuElement || !memElement) {
+            return;
+        }
+
+        const cpuUsage = parseFloat(cpuElement.getAttribute('data-cpu-usage') || 0);
+        const memUsage = parseFloat(memElement.getAttribute('data-mem-usage') || 0);
+
+        if (!isNaN(cpuUsage) && !isNaN(memUsage) && resourcesChart) {
+            // Add new data point
+            resourcesChart.data.datasets[0].data.push(cpuUsage);
+            resourcesChart.data.datasets[1].data.push(memUsage);
+
+            // Keep only last 20 data points
+            if (resourcesChart.data.datasets[0].data.length > 20) {
+                resourcesChart.data.datasets[0].data.shift();
+                resourcesChart.data.datasets[1].data.shift();
+            }
+
+            // Update without animation to prevent jumping
+            resourcesChart.update('none');
+        }
+    }
+
+    // Listen for Livewire updates
+    document.addEventListener('livewire:update', () => {
+        setTimeout(updateChartsFromDOM, 200);
+    });
+
+    // Also listen for morph updates (more reliable)
+    Livewire.hook('morph.updated', () => {
+        setTimeout(updateChartsFromDOM, 200);
+    });
+
+    // Fallback: Poll every 5.5 seconds to catch updates (component polls every 5s)
+    let updateInterval = null;
+    function startUpdateInterval() {
+        if (updateInterval) {
+            clearInterval(updateInterval);
+        }
+        updateInterval = setInterval(() => {
+            if (window.location.pathname.includes('system-monitor')) {
+                updateChartsFromDOM();
+            }
+        }, 5500);
+    }
+
+    // Start interval when charts are initialized
+    document.addEventListener('livewire:initialized', () => {
+        setTimeout(() => {
+            if (chartInitialized) {
+                startUpdateInterval();
+            }
         }, 1000);
+    });
+
+    // Restart interval after navigation
+    document.addEventListener('livewire:navigated', () => {
+        if (window.location.pathname.includes('system-monitor')) {
+            setTimeout(() => {
+                if (chartInitialized) {
+                    startUpdateInterval();
+                }
+            }, 1000);
+        }
+    });
+
+    // Cleanup on navigation away
+    document.addEventListener('livewire:navigating', () => {
+        // Stop update interval
+        if (updateInterval) {
+            clearInterval(updateInterval);
+            updateInterval = null;
+        }
+        
+        // Destroy charts
+        if (resourcesChart) {
+            resourcesChart.destroy();
+            resourcesChart = null;
+        }
+        if (processingChart) {
+            processingChart.destroy();
+            processingChart = null;
+        }
+        chartInitialized = false;
     });
 
     // Pulse animation and smooth transitions

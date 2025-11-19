@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'node_processor' => [
+        'url' => env('NODE_PROCESSOR_URL', 'http://node-processor:3000'),
+        'timeout' => env('NODE_PROCESSOR_TIMEOUT', 600),
+    ],
+
 ];

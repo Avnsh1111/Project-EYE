@@ -17,6 +17,33 @@
     <style>
         [x-cloak] { display: none !important; }
         
+        /* Navigation loading indicator */
+        .wire-loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        .wire-loading-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: var(--primary-color);
+            z-index: 9999;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        
+        .wire-loading-bar.loading {
+            width: 100%;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
         * {
             margin: 0;
             padding: 0;
@@ -499,9 +526,11 @@
     @livewireStyles
 </head>
 <body>
+    <!-- Navigation loading bar -->
+    <div class="wire-loading-bar" id="wire-loading-bar"></div>
     <!-- Top Navigation -->
     <nav class="top-nav">
-        <a href="{{ route('home') }}" class="logo">
+        <a wire:navigate href="{{ route('home') }}" class="logo">
             <span class="logo-icon">📸</span>
             <span>Avinash-EYE</span>
         </a>
@@ -512,32 +541,57 @@
         </div>
 
                 <div class="nav-links">
-                    <a href="{{ route('gallery') }}" class="nav-link {{ request()->routeIs('gallery') ? 'active' : '' }}">
+                    <a wire:navigate href="{{ route('gallery') }}" class="nav-link {{ request()->routeIs('gallery') ? 'active' : '' }}">
                         Photos
                     </a>
-                    <a href="{{ route('collections') }}" class="nav-link {{ request()->routeIs('collections') ? 'active' : '' }}">
+                    <a wire:navigate href="{{ route('collections') }}" class="nav-link {{ request()->routeIs('collections') ? 'active' : '' }}">
                         Collections
                     </a>
-                    <a href="{{ route('people') }}" class="nav-link {{ request()->routeIs('people') ? 'active' : '' }}">
+                    <a wire:navigate href="{{ route('people') }}" class="nav-link {{ request()->routeIs('people') ? 'active' : '' }}">
                         👥 People & Pets
                     </a>
-                    <a href="{{ route('instant-upload') }}" class="nav-link {{ request()->routeIs('instant-upload') ? 'active' : '' }}">
+                    <a wire:navigate href="{{ route('instant-upload') }}" class="nav-link {{ request()->routeIs('instant-upload') ? 'active' : '' }}">
                         ⚡ Instant Upload
                     </a>
-                    <a href="{{ route('processing-status') }}" class="nav-link {{ request()->routeIs('processing-status') ? 'active' : '' }}">
+                    <a wire:navigate href="{{ route('processing-status') }}" class="nav-link {{ request()->routeIs('processing-status') ? 'active' : '' }}">
                         Processing
                     </a>
-                    <a href="{{ route('search') }}" class="nav-link {{ request()->routeIs('search') ? 'active' : '' }}">
+                    <a wire:navigate href="{{ route('search') }}" class="nav-link {{ request()->routeIs('search') ? 'active' : '' }}">
                         Search
                     </a>
                 </div>
 
-        <a href="{{ route('system-monitor') }}" class="icon-btn" title="System Monitor">
+        <a wire:navigate href="{{ route('system-monitor') }}" class="icon-btn" title="System Monitor">
             <span class="material-symbols-outlined">monitoring</span>
         </a>
-        <a href="{{ route('settings') }}" class="icon-btn" title="Settings">
+        <a wire:navigate href="{{ route('settings') }}" class="icon-btn" title="Settings">
             <span class="material-symbols-outlined">settings</span>
         </a>
+        
+        @auth
+        <div style="position: relative; display: inline-block;">
+            <button class="icon-btn" id="user-menu-btn" title="{{ Auth::user()->name }}">
+                <span class="material-symbols-outlined">account_circle</span>
+            </button>
+            <div id="user-menu" style="display: none; position: absolute; top: 100%; right: 0; margin-top: 0.5rem; background: white; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: var(--shadow-md); min-width: 200px; z-index: 1000;">
+                <div style="padding: 1rem; border-bottom: 1px solid var(--border-color);">
+                    <div style="font-weight: 500; color: #202124;">{{ Auth::user()->name }}</div>
+                    <div style="font-size: 0.75rem; color: var(--secondary-color); margin-top: 0.25rem;">{{ Auth::user()->email }}</div>
+                </div>
+                <form method="POST" action="{{ route('logout') }}" style="margin: 0;">
+                    @csrf
+                    <button type="submit" style="width: 100%; padding: 0.75rem 1rem; border: none; background: transparent; text-align: left; cursor: pointer; color: var(--error-color); font-size: 0.875rem; display: flex; align-items: center; gap: 0.5rem; transition: var(--transition);">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">logout</span>
+                        Sign out
+                    </button>
+                </form>
+            </div>
+        </div>
+        @else
+        <a wire:navigate href="{{ route('login') }}" class="nav-link" style="padding: 0.5rem 1rem;">
+            Sign in
+        </a>
+        @endauth
     </nav>
 
     <!-- Main Content -->
@@ -558,7 +612,13 @@
         if (globalSearchInput) {
             globalSearchInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter' && this.value.trim()) {
-                    window.location.href = '{{ route("gallery") }}?q=' + encodeURIComponent(this.value);
+                    // Use wire:navigate for SPA-like navigation
+                    const link = document.createElement('a');
+                    link.href = '{{ route("gallery") }}?q=' + encodeURIComponent(this.value);
+                    link.setAttribute('wire:navigate', '');
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
                 }
             });
             
@@ -573,8 +633,24 @@
             @endif
         }
         
-        // Listen for Livewire navigation events to update search input
+        // Navigation loading indicator
+        const loadingBar = document.getElementById('wire-loading-bar');
+        
+        document.addEventListener('livewire:navigating', () => {
+            if (loadingBar) {
+                loadingBar.classList.add('loading');
+            }
+        });
+        
         document.addEventListener('livewire:navigated', () => {
+            if (loadingBar) {
+                loadingBar.classList.remove('loading');
+                setTimeout(() => {
+                    loadingBar.style.width = '0%';
+                }, 300);
+            }
+            
+            // Update search input from URL
             const urlParams = new URLSearchParams(window.location.search);
             const searchQuery = urlParams.get('q');
             const searchInput = document.getElementById('global-search');
@@ -583,6 +659,24 @@
                 searchInput.value = searchQuery || '';
             }
         });
+        
+        // User menu toggle
+        const userMenuBtn = document.getElementById('user-menu-btn');
+        const userMenu = document.getElementById('user-menu');
+        
+        if (userMenuBtn && userMenu) {
+            userMenuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                userMenu.style.display = userMenu.style.display === 'none' ? 'block' : 'none';
+            });
+            
+            // Close menu when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!userMenuBtn.contains(e.target) && !userMenu.contains(e.target)) {
+                    userMenu.style.display = 'none';
+                }
+            });
+        }
     </script>
 </body>
 </html>

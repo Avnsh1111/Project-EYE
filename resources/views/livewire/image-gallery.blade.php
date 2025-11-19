@@ -21,7 +21,7 @@
                     </button>
                 </div>
             @endif
-            <a href="{{ route('upload') }}" class="btn btn-primary">
+            <a wire:navigate href="{{ route('instant-upload') }}" class="btn btn-primary">
                 <span class="material-symbols-outlined" style="font-size: 1.125rem;">upload</span>
                 Upload
             </a>
@@ -34,7 +34,7 @@
             <div class="empty-state-icon">📸</div>
             <h2 class="empty-state-title">No photos yet</h2>
             <p class="empty-state-description">Upload photos to see them here</p>
-            <a href="{{ route('upload') }}" class="btn btn-primary">
+            <a wire:navigate href="{{ route('instant-upload') }}" class="btn btn-primary">
                 <span class="material-symbols-outlined" style="font-size: 1.125rem;">upload</span>
                 Upload photos
             </a>

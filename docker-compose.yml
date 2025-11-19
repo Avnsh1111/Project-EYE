@@ -161,6 +161,47 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # Node.js Image Processor for parallel batch processing
+  node-processor:
+    build:
+      context: ./node-image-processor
+      dockerfile: Dockerfile
+    container_name: avinash-eye-node-processor
+    ports:
+      - "${NODE_PROCESSOR_PORT:-3000}:3000"
+    volumes:
+      - ./storage/app/public/images:/app/shared:rw
+      - ./node-image-processor:/app:rw
+      - /app/node_modules
+    networks:
+      - avinash-network
+    environment:
+      - PORT=3000
+      - MAX_CONCURRENT=${NODE_MAX_CONCURRENT:-2}
+      - PYTHON_AI_URL=http://python-ai:8000
+      - SHARED_IMAGES_PATH=/app/shared
+    depends_on:
+      python-ai:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   # Laravel Application (PHP-FPM)
   laravel-app:
     build:
@@ -187,6 +228,7 @@ services:
       - DB_USERNAME=${DB_USERNAME:-avinash}
       - DB_PASSWORD=${DB_PASSWORD:-secret}
       - AI_API_URL=http://python-ai:8000
+      - NODE_PROCESSOR_URL=http://node-processor:3000
       - AI_TIMEOUT=${AI_TIMEOUT:-300}
       - QUEUE_CONNECTION=${QUEUE_CONNECTION:-database}
       - CACHE_DRIVER=${CACHE_DRIVER:-file}
@@ -195,6 +237,8 @@ services:
       db:
         condition: service_healthy
       python-ai:
+        condition: service_started
+      node-processor:
         condition: service_started
     restart: unless-stopped
     entrypoint: ["/bin/bash", "-c"]
@@ -292,6 +336,7 @@ services:
       - DB_USERNAME=${DB_USERNAME:-avinash}
       - DB_PASSWORD=${DB_PASSWORD:-secret}
       - AI_API_URL=http://python-ai:8000
+      - NODE_PROCESSOR_URL=http://node-processor:3000
       - AI_TIMEOUT=${AI_TIMEOUT:-300}
       - QUEUE_CONNECTION=${QUEUE_CONNECTION:-database}
     depends_on:
@@ -356,6 +401,7 @@ services:
       - DB_USERNAME=${DB_USERNAME:-avinash}
       - DB_PASSWORD=${DB_PASSWORD:-secret}
       - AI_API_URL=http://python-ai:8000
+      - NODE_PROCESSOR_URL=http://node-processor:3000
       - AI_TIMEOUT=${AI_TIMEOUT:-300}
       - QUEUE_CONNECTION=${QUEUE_CONNECTION:-database}
     depends_on:

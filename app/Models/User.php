@@ -21,6 +21,14 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'is_active',
+        'login_attempts',
+        'locked_until',
+        'last_login_at',
+        'last_login_ip',
+        'two_factor_secret',
+        'two_factor_enabled',
+        'password_changed_at',
     ];
 
     /**
@@ -43,6 +51,11 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
+            'two_factor_enabled' => 'boolean',
+            'locked_until' => 'datetime',
+            'last_login_at' => 'datetime',
+            'password_changed_at' => 'datetime',
         ];
     }
 }

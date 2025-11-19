@@ -5,9 +5,14 @@
 
 echo "🚀 Starting Avinash-EYE Queue Worker..."
 echo ""
-echo "This worker will process uploaded images in the background."
-echo "Keep this running to enable instant upload feature."
+echo "This worker processes all images in the background:"
+echo "  • Single image uploads → Individual processing"
+echo "  • Batch uploads (2+ images) → Node.js parallel processing"
 echo ""
+echo "Node.js service handles parallelization for batch uploads,"
+echo "but jobs are still dispatched via queue for background processing."
+echo ""
+echo "Keep this running to process all uploaded images."
 echo "Press Ctrl+C to stop"
 echo ""
 

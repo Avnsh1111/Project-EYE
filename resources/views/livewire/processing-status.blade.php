@@ -150,7 +150,7 @@
             <div class="empty-state-icon">✅</div>
             <h2 class="empty-state-title">All Caught Up!</h2>
             <p class="empty-state-description">No images currently processing</p>
-            <a href="{{ route('instant-upload') }}" class="btn btn-primary">
+            <a wire:navigate href="{{ route('instant-upload') }}" class="btn btn-primary">
                 <span class="material-symbols-outlined" style="font-size: 1.125rem;">bolt</span>
                 Upload More Images
             </a>

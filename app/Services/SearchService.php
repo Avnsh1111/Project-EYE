@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\ImageFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Search Service
@@ -52,30 +53,69 @@ class SearchService
     public function search(string $query, int $limit = 30): Collection
     {
         $startTime = microtime(true);
+        $query = trim($query);
+        
+        // Cache key for results (cache IDs with similarity scores)
+        $cacheKey = 'search_ids:' . md5($query . ':' . $limit);
+        
+        // Check cache first (5 minute TTL)
+        $cachedData = Cache::get($cacheKey);
+        if ($cachedData !== null && is_array($cachedData)) {
+            Log::info('Search cache hit', ['query' => $query]);
+            // Cached data is array of ['id' => id, 'similarity' => score, 'match_type' => type]
+            $ids = array_column($cachedData, 'id');
+            // Load models from cached IDs
+            $models = ImageFile::whereIn('id', $ids)->get()->keyBy('id');
+            // Return in original order with similarity scores
+            return collect($cachedData)->map(function ($item) use ($models) {
+                $model = $models->get($item['id'] ?? null);
+                if ($model) {
+                    $model->similarity = (float)($item['similarity'] ?? 0.5);
+                    $model->match_type = $item['match_type'] ?? 'semantic';
+                    $model->search_similarity = $model->similarity;
+                    $model->search_match_type = $model->match_type;
+                    return $model;
+                }
+                return null;
+            })->filter()->values();
+        }
 
         Log::info('Performing AI-powered semantic search', ['query' => $query]);
 
         try {
-            // Generate embedding for the search query
-            $queryEmbedding = $this->aiService->embedText($query);
+            // Get or cache query embedding (cache for 1 hour)
+            $embeddingCacheKey = 'embedding:' . md5($query);
+            $queryEmbedding = Cache::remember($embeddingCacheKey, 3600, function () use ($query) {
+                return $this->aiService->embedText($query);
+            });
             
             if ($queryEmbedding && is_array($queryEmbedding) && count($queryEmbedding) > 0) {
-                // Use semantic search with vector similarity
-                $searchResults = $this->semanticSearch($query, $queryEmbedding, $limit);
+                // Use optimized parallel search
+                $searchResults = $this->optimizedSearch($query, $queryEmbedding, $limit);
             } else {
                 // Fallback to keyword search if embedding generation fails
                 Log::warning('Embedding generation failed, falling back to keyword search');
-                $searchResults = $this->keywordSearch($query, $limit);
+                $searchResults = $this->fastKeywordSearch($query, $limit);
             }
         } catch (\Exception $e) {
             Log::error('Semantic search failed, falling back to keyword search', [
                 'error' => $e->getMessage()
             ]);
-            $searchResults = $this->keywordSearch($query, $limit);
+            $searchResults = $this->fastKeywordSearch($query, $limit);
         }
 
-        // Transform results with relevance scores
-        $results = $this->transformResults($searchResults, $query);
+        // Transform results with relevance scores (simplified)
+        $results = $this->fastTransformResults($searchResults, $query)->take($limit);
+
+        // Cache IDs with similarity scores (not full models) for 5 minutes
+        $cacheData = $results->map(function ($result) {
+            return [
+                'id' => $result->id,
+                'similarity' => $result->similarity ?? $result->search_similarity ?? 0.5,
+                'match_type' => $result->match_type ?? $result->search_match_type ?? 'semantic',
+            ];
+        })->toArray();
+        Cache::put($cacheKey, $cacheData, 300);
 
         $searchTime = round((microtime(true) - $startTime) * 1000, 2);
 
@@ -89,38 +129,109 @@ class SearchService
     }
 
     /**
-     * Perform semantic search using vector similarity.
+     * Optimized search: separate text and vector queries, then merge.
+     * Much faster than combined query.
      *
      * @param string $query
      * @param array $queryEmbedding
      * @param int $limit
      * @return Collection
      */
-    protected function semanticSearch(string $query, array $queryEmbedding, int $limit): Collection
+    protected function optimizedSearch(string $query, array $queryEmbedding, int $limit): Collection
     {
         $embeddingString = '[' . implode(',', $queryEmbedding) . ']';
+        $queryLower = strtolower($query);
         
-        // Use pgvector's cosine similarity for semantic search
-        // Higher similarity = better match (range 0-1)
+        // Fast text search (uses indexes, limited results)
+        $textResults = ImageFile::where('processing_status', 'completed')
+            ->whereNull('deleted_at')
+            ->where(function ($q) use ($query, $queryLower) {
+                $q->where('description', 'ilike', $query . '%')  // Prefix match is faster
+                  ->orWhere('description', 'ilike', '% ' . $query . '%')
+                  ->orWhere('original_filename', 'ilike', $query . '%');
+            })
+            ->limit(20)
+            ->get()
+            ->map(function ($item) {
+                $item->similarity = 1.0; // Text matches get 100% similarity
+                $item->match_type = 'text';
+                return $item;
+            });
+        
+        // Fast vector search (uses HNSW index, optimized query)
+        $vectorResults = \DB::select("
+            SELECT 
+                id,
+                1 - (embedding <=> ?::vector) as similarity
+            FROM image_files
+            WHERE embedding IS NOT NULL
+              AND deleted_at IS NULL
+              AND processing_status = 'completed'
+              AND (1 - (embedding <=> ?::vector)) >= ?
+            ORDER BY embedding <=> ?::vector
+            LIMIT ?
+        ", [$embeddingString, self::SEMANTIC_SIMILARITY_THRESHOLD, $embeddingString, $limit + 10]);
+        
+        // Get IDs and load models efficiently (single query)
+        $ids = collect($vectorResults)->pluck('id')->toArray();
+        if (empty($ids)) {
+            return $textResults->take($limit);
+        }
+        
+        $vectorModels = ImageFile::whereIn('id', $ids)
+            ->get()
+            ->keyBy('id');
+        
+        // Map similarity scores to models
+        $vectorCollection = collect($vectorResults)->map(function ($item) use ($vectorModels) {
+            $model = $vectorModels->get($item->id);
+            if ($model) {
+                $model->similarity = (float)$item->similarity;
+                $model->match_type = 'semantic';
+                return $model;
+            }
+            return null;
+        })->filter();
+        
+        // Merge results, remove duplicates, sort by similarity
+        $merged = $textResults->concat($vectorCollection)
+            ->unique('id')
+            ->sortByDesc('similarity')
+            ->take($limit);
+        
+        return $merged->values();
+    }
+    
+    /**
+     * Fast keyword-only search (no AI embedding needed).
+     *
+     * @param string $query
+     * @param int $limit
+     * @return Collection
+     */
+    protected function fastKeywordSearch(string $query, int $limit): Collection
+    {
         return ImageFile::where('processing_status', 'completed')
             ->whereNull('deleted_at')
-            ->whereNotNull('embedding')
-            ->selectRaw('*, 1 - (embedding <=> ?::vector) as similarity', [$embeddingString])
             ->where(function ($q) use ($query) {
-                // Also include keyword matches to boost exact matches
-                $q->where('description', 'ilike', '%' . $query . '%')
-                  ->orWhere('detailed_description', 'ilike', '%' . $query . '%')
-                  ->orWhere('original_filename', 'ilike', '%' . $query . '%')
-                  ->orWhereJsonContains('meta_tags', strtolower($query))
-                  // OR semantic match (similarity handled by ordering)
-                  ->orWhereRaw('1 - (embedding <=> ?::vector) > ?', [
-                      $embeddingString,
-                      self::SEMANTIC_SIMILARITY_THRESHOLD
-                  ]);
+                $q->where('description', 'ilike', $query . '%')  // Prefix match
+                  ->orWhere('description', 'ilike', '% ' . $query . '%')
+                  ->orWhere('original_filename', 'ilike', $query . '%');
             })
-            ->orderByRaw('similarity DESC')
-            ->limit($limit * 2) // Get more results for ranking
-            ->get();
+            ->orderByRaw("
+                CASE 
+                    WHEN description ILIKE ? THEN 1
+                    WHEN original_filename ILIKE ? THEN 2
+                    ELSE 3
+                END
+            ", [$query . '%', $query . '%'])
+            ->limit($limit)
+            ->get()
+            ->map(function ($item) {
+                $item->similarity = 0.8; // Keyword matches get 80% similarity
+                $item->match_type = 'keyword';
+                return $item;
+            });
     }
 
     /**
@@ -295,24 +406,33 @@ class SearchService
     }
 
     /**
-     * Transform search results with relevance scores.
+     * Fast transform results (simplified, no expensive calculations).
      *
      * @param Collection $searchResults
      * @param string $query
      * @return Collection
      */
-    protected function transformResults($searchResults, string $query): Collection
+    protected function fastTransformResults($searchResults, string $query): Collection
     {
-        // Add relevance score to each model without transforming to array
+        // Results already have similarity and match_type from optimized search
+        // Just ensure they're sorted and add search metadata
         return $searchResults->map(function ($result) use ($query) {
-            $similarity = $this->calculateRelevanceScore($result, $query);
+            // Convert similarity to percentage if needed
+            if (!isset($result->similarity)) {
+                $result->similarity = $result->search_similarity ?? 0.5;
+            }
             
-            // Add search metadata to the model
-            $result->search_similarity = $similarity;
-            $result->search_match_type = $similarity >= self::SCORE_EXACT_FILENAME ? 'exact' : 'keyword';
+            // Ensure match type is set
+            if (!isset($result->match_type)) {
+                $result->match_type = $result->search_match_type ?? 'semantic';
+            }
+            
+            // Add search metadata
+            $result->search_similarity = (float)$result->similarity;
+            $result->search_match_type = $result->match_type;
             
             return $result;
-        })->sortByDesc('search_similarity')->values();
+        })->sortByDesc('similarity')->values();
     }
 
     /**
