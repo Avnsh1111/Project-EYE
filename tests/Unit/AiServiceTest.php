@@ -8,9 +8,10 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 describe('AiService', function () {
-    
+
     beforeEach(function () {
-        $this->aiService = new AiService();
+        $this->fileService = Mockery::mock(\App\Services\FileService::class);
+        $this->aiService = new AiService($this->fileService);
     });
 
     it('can be instantiated', function () {
@@ -22,7 +23,8 @@ describe('AiService', function () {
             '*' => Http::response(['status' => 'healthy'], 200),
         ]);
 
-        $aiService = new AiService();
+        $fileService = Mockery::mock(\App\Services\FileService::class);
+        $aiService = new AiService($fileService);
         $isHealthy = $aiService->isHealthy();
 
         // In test environment, service may not be running
@@ -54,6 +56,12 @@ describe('AiService', function () {
         Setting::set('captioning_model', 'Salesforce/blip-image-captioning-large');
         Setting::set('embedding_model', 'laion/CLIP-ViT-B-32-laion2B-s34B-b79K');
         Setting::set('face_detection_enabled', true);
+
+        $this->fileService->shouldReceive('convertToSharedPath')
+            ->andReturn('/app/shared/test.jpg');
+
+        $this->fileService->shouldReceive('convertToSharedPath')
+            ->andReturn('/app/shared/test.jpg');
 
         $result = $this->aiService->analyzeImage('public/images/test.jpg');
 
@@ -94,6 +102,11 @@ describe('AiService', function () {
         Setting::set('captioning_model', 'Salesforce/blip-image-captioning-base');
         Setting::set('embedding_model', 'openai/clip-vit-base-patch32');
         Setting::set('face_detection_enabled', false);
+
+        $this->fileService->shouldReceive('convertToSharedPath')
+            ->andReturn('/app/shared/test.jpg');
+
+
 
         $this->aiService->analyzeImage('public/images/test.jpg');
 
@@ -140,7 +153,12 @@ describe('AiService', function () {
         Setting::set('embedding_model', 'laion/CLIP-ViT-B-32-laion2B-s34B-b79K');
         Setting::set('face_detection_enabled', true);
 
-        $aiService = new AiService();
+        $fileService = Mockery::mock(\App\Services\FileService::class);
+        $fileService->shouldReceive('convertToSharedPath')
+            ->with('public/images/test.jpg')
+            ->andReturn('/app/shared/test.jpg');
+
+        $aiService = new AiService($fileService);
         $aiService->analyzeImage('public/images/test.jpg');
 
         Http::assertSent(function ($request) {
