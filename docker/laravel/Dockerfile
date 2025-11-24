@@ -1,4 +1,4 @@
-FROM php:8.3-fpm
+FROM php:8.4-fpm
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -8,10 +8,11 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libxml2-dev \
     libpq-dev \
+    libicu-dev \
     zip \
     unzip \
     && docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
-    && docker-php-ext-install pdo pdo_pgsql pgsql mbstring exif pcntl bcmath gd
+    && docker-php-ext-install pdo pdo_pgsql pgsql mbstring exif pcntl bcmath gd intl
 
 # Copy custom PHP configuration
 COPY docker/laravel/uploads.ini /usr/local/etc/php/conf.d/uploads.ini
@@ -26,7 +27,7 @@ WORKDIR /var/www/html
 COPY . .
 
 # Install PHP dependencies
-RUN composer install --no-interaction --optimize-autoloader --no-dev || true
+RUN composer install --no-interaction --optimize-autoloader --no-dev
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache || true

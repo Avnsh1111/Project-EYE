@@ -78,6 +78,19 @@ echo "🏗️  Building and starting services..."
 echo "   This may take 10-15 minutes on first run (downloading AI models)"
 echo ""
 
+# Install Composer dependencies locally first
+if [ ! -d "vendor" ]; then
+    echo "📦 Installing PHP dependencies locally..."
+    if command -v composer &> /dev/null; then
+        composer install --no-interaction --optimize-autoloader
+        echo -e "${GREEN}✅ Dependencies installed${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Composer not found locally, will install in container${NC}"
+        echo "   Note: This may cause issues with volume mounts"
+    fi
+    echo ""
+fi
+
 # Stop any existing containers
 echo "🛑 Stopping any existing containers..."
 docker compose down 2>/dev/null || true
