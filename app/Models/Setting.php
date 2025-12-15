@@ -11,11 +11,7 @@ class Setting extends Model
     public $incrementing = false;
     protected $keyType = 'string';
 
-    protected $fillable = ['key', 'value'];
-
-    protected $casts = [
-        'value' => 'json',
-    ];
+    protected $fillable = ['key', 'value', 'description', 'type'];
 
     /**
      * Get a setting value.

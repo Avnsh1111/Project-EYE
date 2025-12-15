@@ -1,0 +1,38 @@
+# Dependencies
+/vendor/
+/node_modules/
+
+# Build artifacts
+/public/build
+/public/hot
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Development files
+/.git
+/.github
+.phpunit.result.cache
+/storage/*.key
+/storage/logs
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/testing/*
+/storage/framework/views/*
+
+# IDE files
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test files
+/tests
+

@@ -351,7 +351,7 @@ services:
           sleep 2;
         done;
         echo '✅ Queue worker starting!';
-        php artisan queue:work database --queue=image-processing --tries=3 --timeout=300 --sleep=3 --max-jobs=100 --max-time=3600
+        php artisan queue:work database --queue=image-processing,default --tries=3 --timeout=300 --sleep=3 --max-jobs=100 --max-time=3600
       "
     healthcheck:
       test: ["CMD-SHELL", "ps aux | grep 'queue:work' | grep -v grep || exit 1"]
