@@ -22,11 +22,19 @@ class DetectedFace extends Model
     ];
 
     /**
-     * Get the image this face belongs to
+     * Get the media file this face belongs to
+     */
+    public function mediaFile(): BelongsTo
+    {
+        return $this->belongsTo(MediaFile::class, 'image_file_id');
+    }
+
+    /**
+     * Get the image this face belongs to (alias for mediaFile)
      */
     public function imageFile(): BelongsTo
     {
-        return $this->belongsTo(ImageFile::class);
+        return $this->belongsTo(MediaFile::class, 'image_file_id');
     }
 
     /**

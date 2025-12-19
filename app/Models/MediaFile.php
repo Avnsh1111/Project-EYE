@@ -363,6 +363,24 @@ class MediaFile extends Model
     }
 
     /**
+     * Get detected faces for this media file.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function detectedFaces()
+    {
+        return $this->hasMany(DetectedFace::class, 'image_file_id');
+    }
+
+    /**
+     * Get the folder that owns the media file.
+     */
+    public function folder()
+    {
+        return $this->belongsTo(Folder::class);
+    }
+
+    /**
      * Mark processing as started.
      *
      * @return void

@@ -10,6 +10,7 @@ use App\Livewire\Settings;
 use App\Livewire\ProcessingStatus;
 use App\Livewire\SystemMonitor;
 use App\Livewire\PeopleAndPets;
+use App\Livewire\DocumentManager;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
 use App\Livewire\Auth\ForgotPassword;
@@ -48,9 +49,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/search', ImageSearch::class)->name('search');
     Route::get('/gallery', EnhancedImageGallery::class)->name('gallery');
     Route::get('/collections', Collections::class)->name('collections');
+    Route::get('/documents', DocumentManager::class)->name('documents');
     Route::get('/settings', Settings::class)->name('settings');
     Route::get('/system-monitor', SystemMonitor::class)->name('system-monitor');
-    Route::get('/people', PeopleAndPets::class)->name('people');
+    Route::get('/people-and-pets', PeopleAndPets::class)->name('people-and-pets');
 
     // Media streaming routes (video/audio/archive)
     Route::get('/media/{id}/stream', [App\Http\Controllers\MediaController::class, 'stream'])->name('media.stream');

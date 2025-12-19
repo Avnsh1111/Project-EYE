@@ -9,6 +9,10 @@ use App\Services\FaceClusteringService;
 class PeopleAndPets extends Component
 {
     public $clusters = [];
+    public $faceGroups = [];
+    public $stats = [
+        'total_faces' => 0,
+    ];
     public $searchQuery = '';
     public $selectedType = 'all'; // all, person, pet, unknown
     public $editingClusterId = null;
@@ -17,6 +21,7 @@ class PeopleAndPets extends Component
     public function mount()
     {
         $this->loadClusters();
+        $this->loadStats();
     }
     
     public function loadClusters()
@@ -33,18 +38,35 @@ class PeopleAndPets extends Component
             $query->where('name', 'like', '%' . $this->searchQuery . '%');
         }
         
-        $this->clusters = $query->orderBy('photo_count', 'desc')
-            ->get()
-            ->map(function ($cluster) {
-                return [
-                    'id' => $cluster->id,
-                    'name' => $cluster->name ?? 'Unknown ' . ucfirst($cluster->type),
-                    'type' => $cluster->type,
-                    'photo_count' => $cluster->photo_count,
-                    'thumbnail_url' => $cluster->thumbnail_url,
-                ];
-            })
-            ->toArray();
+        $clusters = $query->orderBy('photo_count', 'desc')->get();
+        
+        $this->clusters = $clusters->map(function ($cluster) {
+            return [
+                'id' => $cluster->id,
+                'name' => $cluster->name ?? 'Unknown ' . ucfirst($cluster->type),
+                'type' => $cluster->type,
+                'photo_count' => $cluster->photo_count,
+                'thumbnail_url' => $cluster->thumbnail_url,
+            ];
+        })->toArray();
+        
+        // Also prepare faceGroups format for the view
+        $this->faceGroups = $clusters->map(function ($cluster) {
+            return [
+                'id' => $cluster->id,
+                'name' => $cluster->name ?? 'Unknown Person',
+                'count' => $cluster->photo_count,
+                'sample_image' => $cluster->thumbnail_url,
+                'icon' => '👤',
+            ];
+        })->toArray();
+    }
+    
+    public function loadStats()
+    {
+        $this->stats = [
+            'total_faces' => FaceCluster::where('photo_count', '>', 0)->count(),
+        ];
     }
     
     public function startEditing($clusterId, $currentName)
@@ -106,6 +128,7 @@ class PeopleAndPets extends Component
             $service = app(FaceClusteringService::class);
             $service->reclusterAllFaces();
             $this->loadClusters();
+            $this->loadStats();
             session()->flash('message', 'Faces re-clustered successfully!');
         } catch (\Exception $e) {
             session()->flash('error', 'Re-clustering failed: ' . $e->getMessage());
@@ -115,11 +138,13 @@ class PeopleAndPets extends Component
     public function updatedSearchQuery()
     {
         $this->loadClusters();
+        $this->loadStats();
     }
     
     public function updatedSelectedType()
     {
         $this->loadClusters();
+        $this->loadStats();
     }
     
     public function render()

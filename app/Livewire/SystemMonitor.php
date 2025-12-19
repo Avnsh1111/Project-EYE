@@ -482,8 +482,123 @@ class SystemMonitor extends Component
         });
     }
     
+    /**
+     * Get failed jobs details
+     */
+    public function getFailedJobs()
+    {
+        return DB::table('failed_jobs')
+            ->orderBy('failed_at', 'desc')
+            ->limit(50)
+            ->get()
+            ->map(function ($job) {
+                $payload = json_decode($job->payload, true);
+                $exception = $job->exception;
+                
+                // Extract error message from exception
+                $errorMessage = 'Unknown error';
+                if (preg_match('/: (.+?)\n/', $exception, $matches)) {
+                    $errorMessage = $matches[1];
+                }
+                
+                return [
+                    'id' => $job->id,
+                    'uuid' => $job->uuid,
+                    'queue' => $job->queue,
+                    'payload' => $payload,
+                    'display_name' => $payload['displayName'] ?? 'Unknown Job',
+                    'error' => $errorMessage,
+                    'failed_at' => \Carbon\Carbon::parse($job->failed_at)->diffForHumans(),
+                    'failed_at_full' => $job->failed_at,
+                ];
+            })
+            ->toArray();
+    }
+    
+    /**
+     * Retry a single failed job
+     */
+    public function retryFailedJob($jobId)
+    {
+        try {
+            Artisan::call('queue:retry', ['id' => [$jobId]]);
+            session()->flash('success', 'Job has been queued for retry');
+            $this->loadAllStats();
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to retry job: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Retry all failed jobs
+     */
+    public function retryAllFailedJobs()
+    {
+        try {
+            Artisan::call('queue:retry', ['id' => ['all']]);
+            session()->flash('success', 'All failed jobs have been queued for retry');
+            $this->loadAllStats();
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to retry jobs: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Delete a single failed job
+     */
+    public function deleteFailedJob($jobId)
+    {
+        try {
+            Artisan::call('queue:forget', ['id' => $jobId]);
+            session()->flash('success', 'Failed job has been deleted');
+            $this->loadAllStats();
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to delete job: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Clear all failed jobs
+     */
+    public function clearAllFailedJobs()
+    {
+        try {
+            Artisan::call('queue:flush');
+            session()->flash('success', 'All failed jobs have been cleared');
+            $this->loadAllStats();
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to clear jobs: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Check and restart AI service if needed
+     */
+    public function restartAiService()
+    {
+        try {
+            // Clear AI service related caches
+            Cache::forget('ai_service_health');
+            Cache::forget('circuit_breaker_ai_service');
+            Cache::forget('circuit_breaker_ai_service_failures');
+            Cache::forget('circuit_breaker_ai_service_last_failure');
+            
+            // Clear any model status caches
+            Cache::flush();
+            
+            session()->flash('success', 'AI service caches cleared. Jobs will retry connecting to the AI service.');
+            $this->loadAllStats();
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to clear AI service caches: ' . $e->getMessage());
+        }
+    }
+
     public function render()
     {
-        return view('livewire.system-monitor')->layout('layouts.app');
+        $failedJobs = $this->getFailedJobs();
+        
+        return view('livewire.system-monitor', [
+            'failedJobs' => $failedJobs,
+        ])->layout('layouts.app');
     }
 }

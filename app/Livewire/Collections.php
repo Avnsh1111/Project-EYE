@@ -25,6 +25,7 @@ class Collections extends Component
 
     public $collections = [];
     public $faceCollections = [];
+    public $photoFolders = []; // Date-based photo folders
     public $stats = [
         'total_images' => 0,
         'total_categories' => 0,
@@ -78,6 +79,7 @@ class Collections extends Component
     {
         $this->loadCollections();
         $this->loadFaceCollections();
+        $this->loadPhotoFolders();
         $this->loadStats();
     }
 
@@ -87,8 +89,9 @@ class Collections extends Component
     public function loadCollections()
     {
         try {
-            // Get all images with meta_tags
-            $images = MediaFile::whereNull('deleted_at')
+            // Get all images with meta_tags (ONLY IMAGES, NOT DOCUMENTS)
+            $images = MediaFile::where('media_type', 'image')
+                ->whereNull('deleted_at')
                 ->where('processing_status', 'completed')
                 ->whereNotNull('meta_tags')
                 ->select('id', 'file_path', 'meta_tags', 'description')
@@ -144,8 +147,9 @@ class Collections extends Component
     public function loadFaceCollections()
     {
         try {
-            // Get images with faces
-            $imagesWithFaces = MediaFile::whereNull('deleted_at')
+            // Get images with faces (ONLY IMAGES, NOT DOCUMENTS)
+            $imagesWithFaces = MediaFile::where('media_type', 'image')
+                ->whereNull('deleted_at')
                 ->where('processing_status', 'completed')
                 ->where('face_count', '>', 0)
                 ->select('id', 'file_path', 'face_count', 'face_encodings')
@@ -202,6 +206,62 @@ class Collections extends Component
         } catch (\Exception $e) {
             Log::error('Failed to load face collections', ['error' => $e->getMessage()]);
             $this->faceCollections = [];
+        }
+    }
+
+    /**
+     * Load photo folders organized by date (year/month).
+     */
+    public function loadPhotoFolders()
+    {
+        try {
+            // Group photos by year and month
+            $images = MediaFile::where('media_type', 'image')
+                ->whereNull('deleted_at')
+                ->where('processing_status', 'completed')
+                ->whereNotNull('date_taken')
+                ->select('id', 'file_path', 'date_taken')
+                ->orderBy('date_taken', 'desc')
+                ->get();
+
+            $folderGroups = [];
+
+            foreach ($images as $image) {
+                $year = $image->date_taken->format('Y');
+                $month = $image->date_taken->format('F'); // Full month name
+                $monthKey = $image->date_taken->format('Y-m');
+
+                if (!isset($folderGroups[$monthKey])) {
+                    $folderGroups[$monthKey] = [
+                        'name' => $month . ' ' . $year,
+                        'year' => $year,
+                        'month' => $month,
+                        'date' => $image->date_taken,
+                        'count' => 0,
+                        'images' => []
+                    ];
+                }
+
+                $folderGroups[$monthKey]['count']++;
+
+                // Add thumbnail (limit to 4 per folder)
+                if (count($folderGroups[$monthKey]['images']) < 4) {
+                    $folderGroups[$monthKey]['images'][] = [
+                        'id' => $image->id,
+                        'url' => asset('storage/' . str_replace('public/', '', $image->file_path))
+                    ];
+                }
+            }
+
+            // Convert to array and sort by date (newest first)
+            $this->photoFolders = collect($folderGroups)
+                ->sortByDesc('date')
+                ->values()
+                ->toArray();
+
+        } catch (\Exception $e) {
+            Log::error('Failed to load photo folders', ['error' => $e->getMessage()]);
+            $this->photoFolders = [];
         }
     }
 

@@ -1,280 +1,281 @@
-<div wire:poll.5s="loadStatus">
-    <!-- Header -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-        <div>
-            <h1 style="font-size: 1.5rem; font-weight: 500; color: #202124; margin-bottom: 0.5rem;">
-                Background Processing Status
-            </h1>
-            <p style="font-size: 0.875rem; color: var(--secondary-color);">
-                Auto-refreshes every 5 seconds • Click Refresh for instant update
-            </p>
+<div wire:poll.5s="loadStatus" class="min-h-screen bg-surface-variant">
+    <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        <!-- Header -->
+        <div class="flex items-start justify-between mb-8 flex-wrap gap-4">
+            <div>
+                <h1 class="text-3xl font-display font-bold text-gray-900 flex items-center gap-3 mb-2">
+                    <div class="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center shadow-md3-2">
+                        <span class="material-symbols-outlined text-white text-2xl">pending_actions</span>
+                    </div>
+                    <span>Background Processing</span>
+                </h1>
+                <p class="text-base text-gray-600">
+                    Auto-refreshes every 5 seconds • Click Refresh for instant update
+                </p>
+            </div>
+
+            <button wire:click="loadStatus" 
+                    class="inline-flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-700 font-medium rounded-lg border-2 border-outline hover:border-gray-300 transition-all duration-200 shadow-md3-1 hover:shadow-md3-2">
+                <span class="material-symbols-outlined text-xl">refresh</span>
+                <span>Refresh</span>
+            </button>
         </div>
 
-        <button wire:click="loadStatus" class="btn btn-secondary">
-            <span class="material-symbols-outlined" style="font-size: 1.125rem;">refresh</span>
-            Refresh
-        </button>
-    </div>
-
-    <!-- Stats Cards -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
-        <!-- Pending -->
-        <div class="card" wire:click="toggleSection('pending')"
-             style="text-align: center; cursor: pointer; transition: all 0.2s; {{ $showPending ? 'background: #fef7e0; border: 2px solid #f9ab00; box-shadow: 0 4px 8px rgba(249,171,0,0.2);' : '' }}"
-             onmouseover="if (!{{ $showPending ? 'true' : 'false' }}) { this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'; }"
-             onmouseout="if (!{{ $showPending ? 'true' : 'false' }}) { this.style.transform='translateY(0)'; this.style.boxShadow=''; }">
-            <div style="font-size: 2rem; font-weight: 700; color: #f9ab00; margin-bottom: 0.5rem;">
-                {{ $stats['pending'] }}
-            </div>
-            <div style="font-size: 0.875rem; color: {{ $showPending ? '#f9ab00' : 'var(--secondary-color)' }}; font-weight: {{ $showPending ? '600' : '400' }};">
-                ⏳ Pending {{ $showPending ? '▼' : '▶' }}
-            </div>
-        </div>
-
-        <!-- Processing -->
-        <div class="card" wire:click="toggleSection('processing')"
-             style="text-align: center; cursor: pointer; transition: all 0.2s; {{ $showProcessing ? 'background: #e8f0fe; border: 2px solid var(--primary-color); box-shadow: 0 4px 8px rgba(66,133,244,0.2);' : '' }}"
-             onmouseover="if (!{{ $showProcessing ? 'true' : 'false' }}) { this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'; }"
-             onmouseout="if (!{{ $showProcessing ? 'true' : 'false' }}) { this.style.transform='translateY(0)'; this.style.boxShadow=''; }">
-            <div style="font-size: 2rem; font-weight: 700; color: var(--primary-color); margin-bottom: 0.5rem;">
-                {{ $stats['processing'] }}
-            </div>
-            <div style="font-size: 0.875rem; color: {{ $showProcessing ? 'var(--primary-color)' : 'var(--secondary-color)' }}; font-weight: {{ $showProcessing ? '600' : '400' }};">
-                ⚙️ Processing {{ $showProcessing ? '▼' : '▶' }}
-            </div>
-        </div>
-
-        <!-- Completed -->
-        <div class="card" wire:click="toggleSection('completed')"
-             style="text-align: center; cursor: pointer; transition: all 0.2s; {{ $showCompleted ? 'background: #e6f4ea; border: 2px solid #137333; box-shadow: 0 4px 8px rgba(19,115,51,0.2);' : '' }}"
-             onmouseover="if (!{{ $showCompleted ? 'true' : 'false' }}) { this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'; }"
-             onmouseout="if (!{{ $showCompleted ? 'true' : 'false' }}) { this.style.transform='translateY(0)'; this.style.boxShadow=''; }">
-            <div style="font-size: 2rem; font-weight: 700; color: #137333; margin-bottom: 0.5rem;">
-                {{ $stats['completed'] }}
-            </div>
-            <div style="font-size: 0.875rem; color: {{ $showCompleted ? '#137333' : 'var(--secondary-color)' }}; font-weight: {{ $showCompleted ? '600' : '400' }};">
-                ✅ Completed {{ $showCompleted ? '▼' : '▶' }}
-            </div>
-        </div>
-
-        <!-- Failed -->
-        <div class="card" wire:click="toggleSection('failed')"
-             style="text-align: center; cursor: pointer; transition: all 0.2s; {{ $showFailed ? 'background: #fce8e6; border: 2px solid #d93025; box-shadow: 0 4px 8px rgba(217,48,37,0.2);' : '' }}"
-             onmouseover="if (!{{ $showFailed ? 'true' : 'false' }}) { this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'; }"
-             onmouseout="if (!{{ $showFailed ? 'true' : 'false' }}) { this.style.transform='translateY(0)'; this.style.boxShadow=''; }">
-            <div style="font-size: 2rem; font-weight: 700; color: #d93025; margin-bottom: 0.5rem;">
-                {{ $stats['failed'] }}
-            </div>
-            <div style="font-size: 0.875rem; color: {{ $showFailed ? '#d93025' : 'var(--secondary-color)' }}; font-weight: {{ $showFailed ? '600' : '400' }};">
-                ❌ Failed {{ $showFailed ? '▼' : '▶' }}
-            </div>
-        </div>
-    </div>
-
-    <!-- Pending Files -->
-    @if (!empty($pending_files) && $showPending)
-        <div class="card" style="margin-bottom: 2rem;" x-data x-show="true" x-transition>
-            <h2 style="font-size: 1.25rem; font-weight: 500; color: #202124; margin-bottom: 1rem;">
-                ⏳ Pending ({{ count($pending_files) }})
-            </h2>
-
-            @if (session()->has('message'))
-                <div style="padding: 1rem; background: #e6f4ea; border-left: 4px solid #137333; border-radius: 4px; margin-bottom: 1rem;">
-                    <span style="color: #137333;">✓</span> {{ session('message') }}
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <!-- Pending -->
+            <div wire:click="toggleSection('pending')"
+                 class="bg-white rounded-2xl p-6 text-center cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-md3-3 
+                        {{ $showPending ? 'ring-2 ring-yellow-500 shadow-md3-3 bg-yellow-50' : 'shadow-md3-1' }}">
+                <div class="text-4xl font-bold text-yellow-600 mb-2">
+                    {{ $stats['pending'] }}
                 </div>
-            @endif
+                <div class="text-sm {{ $showPending ? 'text-yellow-700 font-semibold' : 'text-gray-600' }}">
+                    <span class="material-symbols-outlined text-base align-middle">hourglass_empty</span>
+                    Pending {{ $showPending ? '▼' : '▶' }}
+                </div>
+            </div>
 
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-                @foreach ($pending_files as $file)
-                    <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--hover-bg); border-radius: 8px;">
-                        <!-- Thumbnail -->
-                        <img src="{{ $file['url'] }}" alt="{{ $file['filename'] }}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px;">
+            <!-- Processing -->
+            <div wire:click="toggleSection('processing')"
+                 class="bg-white rounded-2xl p-6 text-center cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-md3-3
+                        {{ $showProcessing ? 'ring-2 ring-primary-500 shadow-md3-3 bg-primary-50' : 'shadow-md3-1' }}">
+                <div class="text-4xl font-bold text-primary-600 mb-2">
+                    {{ $stats['processing'] }}
+                </div>
+                <div class="text-sm {{ $showProcessing ? 'text-primary-700 font-semibold' : 'text-gray-600' }}">
+                    <span class="material-symbols-outlined text-base align-middle animate-spin">settings</span>
+                    Processing {{ $showProcessing ? '▼' : '▶' }}
+                </div>
+            </div>
 
-                        <!-- File Info -->
-                        <div style="flex: 1;">
-                            <div style="font-weight: 500; color: #202124; margin-bottom: 0.25rem;">
-                                {{ $file['filename'] }}
-                            </div>
+            <!-- Completed -->
+            <div wire:click="toggleSection('completed')"
+                 class="bg-white rounded-2xl p-6 text-center cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-md3-3
+                        {{ $showCompleted ? 'ring-2 ring-green-600 shadow-md3-3 bg-green-50' : 'shadow-md3-1' }}">
+                <div class="text-4xl font-bold text-green-600 mb-2">
+                    {{ $stats['completed'] }}
+                </div>
+                <div class="text-sm {{ $showCompleted ? 'text-green-700 font-semibold' : 'text-gray-600' }}">
+                    <span class="material-symbols-outlined material-symbols-filled text-base align-middle">check_circle</span>
+                    Completed {{ $showCompleted ? '▼' : '▶' }}
+                </div>
+            </div>
 
-                            <!-- File Type Badge -->
-                            <div style="display: inline-block; background: #f9ab00; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.25rem;">
-                                {{ $file['media_type'] }}
-                            </div>
-
-                            <!-- Upload Time -->
-                            <div style="font-size: 0.875rem; color: var(--secondary-color);">
-                                Uploaded: {{ $file['created_at'] }}
-                            </div>
-                        </div>
-
-                        <!-- Quick Actions -->
-                        <div style="display: flex; gap: 0.5rem;">
-                            <!-- Download Button -->
-                            <button wire:click="downloadFile({{ $file['id'] }})" class="btn btn-secondary" style="font-size: 0.875rem; padding: 0.5rem 1rem;" title="Download file">
-                                <span class="material-symbols-outlined" style="font-size: 1rem;">download</span>
-                            </button>
-
-                            <!-- Reanalyze Button -->
-                            <button wire:click="reanalyze({{ $file['id'] }})" class="btn btn-secondary" style="font-size: 0.875rem; padding: 0.5rem 1rem;" title="Process now">
-                                <span class="material-symbols-outlined" style="font-size: 1rem;">refresh</span>
-                            </button>
-
-                            <!-- Cancel Button -->
-                            <button wire:click="cancelPending({{ $file['id'] }})" class="btn btn-secondary" style="font-size: 0.875rem; padding: 0.5rem 1rem; background: #fce8e6; color: #d93025;" title="Cancel and remove" onclick="return confirm('Are you sure you want to cancel and delete this file?')">
-                                <span class="material-symbols-outlined" style="font-size: 1rem;">close</span>
-                            </button>
-                        </div>
-                    </div>
-                @endforeach
+            <!-- Failed -->
+            <div wire:click="toggleSection('failed')"
+                 class="bg-white rounded-2xl p-6 text-center cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-md3-3
+                        {{ $showFailed ? 'ring-2 ring-red-500 shadow-md3-3 bg-red-50' : 'shadow-md3-1' }}">
+                <div class="text-4xl font-bold text-red-600 mb-2">
+                    {{ $stats['failed'] }}
+                </div>
+                <div class="text-sm {{ $showFailed ? 'text-red-700 font-semibold' : 'text-gray-600' }}">
+                    <span class="material-symbols-outlined material-symbols-filled text-base align-middle">error</span>
+                    Failed {{ $showFailed ? '▼' : '▶' }}
+                </div>
             </div>
         </div>
-    @endif
 
-    <!-- Currently Processing -->
-    @if (!empty($processing_files) && $showProcessing)
-        <div class="card" style="margin-bottom: 2rem;" x-data x-show="true" x-transition>
-            <h2 style="font-size: 1.25rem; font-weight: 500; color: #202124; margin-bottom: 1rem;">
-                ⚙️ Currently Processing ({{ count($processing_files) }})
-            </h2>
+        <!-- Pending Files -->
+        @if (!empty($pending_files) && $showPending)
+            <div class="bg-white rounded-2xl shadow-md3-2 p-6 mb-6 animate-slide-down" x-data x-show="true" x-transition>
+                <h2 class="text-xl font-semibold text-gray-900 flex items-center gap-2 mb-6">
+                    <span class="material-symbols-outlined text-yellow-600">hourglass_empty</span>
+                    <span>Pending ({{ count($pending_files) }})</span>
+                </h2>
 
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-                @foreach ($processing_files as $img)
-                    <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--hover-bg); border-radius: 8px;">
-                        <img src="{{ $img['url'] }}" alt="{{ $img['filename'] }}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px;">
-                        
-                        <div style="flex: 1;">
-                            <div style="font-weight: 500; color: #202124; margin-bottom: 0.25rem;">
-                                {{ $img['filename'] }}
+                @if (session()->has('message'))
+                    <div class="p-4 bg-green-50 border-l-4 border-green-500 rounded-r-lg mb-6">
+                        <span class="text-green-700">✓ {{ session('message') }}</span>
+                    </div>
+                @endif
+
+                <div class="space-y-4">
+                    @foreach ($pending_files as $file)
+                        <div class="flex items-center gap-4 p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors duration-200">
+                            <!-- Thumbnail -->
+                            <img src="{{ $file['url'] }}" 
+                                 alt="{{ $file['filename'] }}" 
+                                 class="w-20 h-20 object-cover rounded-lg shadow-md3-1">
+
+                            <!-- File Info -->
+                            <div class="flex-1 min-w-0">
+                                <div class="font-medium text-gray-900 truncate mb-1">
+                                    {{ $file['filename'] }}
+                                </div>
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="inline-block bg-yellow-500 text-white px-2 py-0.5 rounded text-xs font-medium uppercase">
+                                        {{ $file['media_type'] ?? 'Unknown' }}
+                                    </span>
+                                    <span class="text-sm text-gray-600">
+                                        {{ $file['file_size'] }}
+                                    </span>
+                                </div>
                             </div>
-                            <div style="font-size: 0.875rem; color: var(--secondary-color);">
-                                Started: {{ $img['started_at'] }}
+
+                            <!-- Actions -->
+                            <div class="flex items-center gap-2">
+                                <button wire:click="downloadFile({{ $file['id'] }})" 
+                                        class="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors duration-200"
+                                        title="Download file">
+                                    <span class="material-symbols-outlined">download</span>
+                                </button>
+                                <button wire:click="reanalyze({{ $file['id'] }})" 
+                                        class="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors duration-200"
+                                        title="Process now">
+                                    <span class="material-symbols-outlined">play_arrow</span>
+                                </button>
+                                <button wire:click="cancelPending({{ $file['id'] }})" 
+                                        class="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                                        title="Cancel and remove"
+                                        onclick="return confirm('Are you sure you want to cancel and delete this file?')">
+                                    <span class="material-symbols-outlined">close</span>
+                                </button>
                             </div>
                         </div>
-                        
-                        <div class="spinner"></div>
-                    </div>
-                @endforeach
+                    @endforeach
+                </div>
             </div>
-        </div>
-    @endif
+        @endif
 
-    <!-- Recently Completed (Last 24h) -->
-    @if (!empty($completed_files) && $showCompleted)
-        <div class="card" style="margin-bottom: 2rem;" x-data x-show="true" x-transition>
-            <h2 style="font-size: 1.25rem; font-weight: 500; color: #202124; margin-bottom: 1rem;">
-                ✅ Recently Completed (Last 24h - {{ count($completed_files) }})
-            </h2>
+        <!-- Processing Files -->
+        @if (!empty($processing_files) && $showProcessing)
+            <div class="bg-white rounded-2xl shadow-md3-2 p-6 mb-6 animate-slide-down" x-data x-show="true" x-transition>
+                <h2 class="text-xl font-semibold text-gray-900 flex items-center gap-2 mb-6">
+                    <span class="material-symbols-outlined text-primary-600 animate-spin">settings</span>
+                    <span>Processing ({{ count($processing_files) }})</span>
+                </h2>
 
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-                @foreach ($completed_files as $file)
-                    <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: #e6f4ea; border-radius: 8px; border-left: 4px solid #137333;">
-                        <!-- Thumbnail -->
-                        <img src="{{ $file['url'] }}" alt="{{ $file['filename'] }}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px;">
-
-                        <!-- File Info -->
-                        <div style="flex: 1;">
-                            <div style="font-weight: 500; color: #202124; margin-bottom: 0.25rem;">
-                                {{ $file['filename'] }}
+                <div class="space-y-4">
+                    @foreach ($processing_files as $img)
+                        <div class="flex items-center gap-4 p-4 bg-primary-50 rounded-xl border-l-4 border-primary-500">
+                            <img src="{{ $img['url'] }}" 
+                                 alt="{{ $img['filename'] }}" 
+                                 class="w-20 h-20 object-cover rounded-lg shadow-md3-1">
+                            <div class="flex-1">
+                                <div class="font-medium text-gray-900 mb-1">{{ $img['filename'] }}</div>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-4 h-4 border-2 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
+                                    <span class="text-sm text-primary-700 font-medium">Processing...</span>
+                                </div>
                             </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
 
-                            <!-- File Type Badge -->
-                            <div style="display: inline-block; background: #137333; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.25rem;">
-                                {{ $file['media_type'] }}
-                            </div>
+        <!-- Completed Files -->
+        @if (!empty($completed_files) && $showCompleted)
+            <div class="bg-white rounded-2xl shadow-md3-2 p-6 mb-6 animate-slide-down" x-data x-show="true" x-transition>
+                <h2 class="text-xl font-semibold text-gray-900 flex items-center gap-2 mb-6">
+                    <span class="material-symbols-outlined material-symbols-filled text-green-600">check_circle</span>
+                    <span>Completed ({{ count($completed_files) }})</span>
+                </h2>
 
-                            <!-- Processing Info -->
-                            <div style="font-size: 0.875rem; color: var(--secondary-color);">
-                                <span style="color: #137333;">✓</span> Completed {{ $file['completed_at'] }}
-                                @if ($file['processing_time'])
-                                    ({{ $file['processing_time'] }})
+                <div class="space-y-4">
+                    @foreach ($completed_files as $file)
+                        <div class="flex items-center gap-4 p-4 bg-green-50 rounded-xl border-l-4 border-green-500">
+                            <img src="{{ $file['url'] }}" 
+                                 alt="{{ $file['filename'] }}" 
+                                 class="w-20 h-20 object-cover rounded-lg shadow-md3-1">
+
+                            <div class="flex-1 min-w-0">
+                                <div class="font-medium text-gray-900 truncate mb-1">
+                                    {{ $file['filename'] }}
+                                </div>
+                                <div class="flex items-center gap-2 flex-wrap mb-1">
+                                    <span class="inline-block bg-green-600 text-white px-2 py-0.5 rounded text-xs font-medium uppercase">
+                                        Completed
+                                    </span>
+                                    <span class="text-sm text-gray-600">
+                                        ✓ Completed {{ $file['completed_at'] }}
+                                    </span>
+                                </div>
+                                @if (!empty($file['description']))
+                                    <p class="text-sm text-gray-600 line-clamp-2">
+                                        {{ $file['description'] }}
+                                    </p>
                                 @endif
                             </div>
 
-                            <!-- Description -->
-                            @if ($file['description'])
-                                <div style="font-size: 0.875rem; color: var(--secondary-color); margin-top: 0.25rem;">
-                                    {{ Str::limit($file['description'], 100) }}
+                            <div class="flex items-center gap-2">
+                                <button wire:click="downloadFile({{ $file['id'] }})" 
+                                        class="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors duration-200"
+                                        title="Download file">
+                                    <span class="material-symbols-outlined">download</span>
+                                </button>
+                                <button wire:click="reanalyze({{ $file['id'] }})" 
+                                        class="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors duration-200"
+                                        title="Reanalyze">
+                                    <span class="material-symbols-outlined">refresh</span>
+                                </button>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
+        <!-- Failed Files -->
+        @if (!empty($failed_files) && $showFailed)
+            <div class="bg-white rounded-2xl shadow-md3-2 p-6 mb-6 animate-slide-down" x-data x-show="true" x-transition>
+                <h2 class="text-xl font-semibold text-gray-900 flex items-center gap-2 mb-6">
+                    <span class="material-symbols-outlined material-symbols-filled text-red-600">error</span>
+                    <span>Failed ({{ count($failed_files) }})</span>
+                </h2>
+
+                <div class="space-y-4">
+                    @foreach ($failed_files as $file)
+                        <div class="flex items-center gap-4 p-4 bg-red-50 rounded-xl border-l-4 border-red-500">
+                            <img src="{{ $file['url'] }}" 
+                                 alt="{{ $file['filename'] }}" 
+                                 class="w-20 h-20 object-cover rounded-lg shadow-md3-1">
+
+                            <div class="flex-1 min-w-0">
+                                <div class="font-medium text-gray-900 truncate mb-1">
+                                    {{ $file['filename'] }}
                                 </div>
-                            @endif
-                        </div>
+                                <div class="flex items-center gap-2 flex-wrap mb-1">
+                                    <span class="inline-block bg-red-600 text-white px-2 py-0.5 rounded text-xs font-medium uppercase">
+                                        Failed
+                                    </span>
+                                </div>
+                                <div class="text-sm text-red-600">
+                                    ⚠️ {{ $file['error'] ?? 'Processing failed' }}
+                                </div>
+                            </div>
 
-                        <!-- Quick Actions -->
-                        <div style="display: flex; gap: 0.5rem;">
-                            <!-- Download Button -->
-                            <button wire:click="downloadFile({{ $file['id'] }})" class="btn btn-secondary" style="font-size: 0.875rem; padding: 0.5rem 1rem;" title="Download file">
-                                <span class="material-symbols-outlined" style="font-size: 1rem;">download</span>
-                            </button>
-
-                            <!-- Reanalyze Button -->
-                            <button wire:click="reanalyze({{ $file['id'] }})" class="btn btn-secondary" style="font-size: 0.875rem; padding: 0.5rem 1rem;" title="Reanalyze">
-                                <span class="material-symbols-outlined" style="font-size: 1rem;">refresh</span>
-                            </button>
+                            <div class="flex items-center gap-2">
+                                <button wire:click="downloadFile({{ $file['id'] }})" 
+                                        class="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors duration-200"
+                                        title="Download file">
+                                    <span class="material-symbols-outlined">download</span>
+                                </button>
+                                <button wire:click="retryFailed({{ $file['id'] }})" 
+                                        class="p-2 text-red-600 hover:text-red-700 hover:bg-red-100 rounded-lg transition-colors duration-200"
+                                        title="Retry processing">
+                                    <span class="material-symbols-outlined">refresh</span>
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                @endforeach
+                    @endforeach
+                </div>
             </div>
-        </div>
-    @endif
+        @endif
 
-    <!-- Failed Processing -->
-    @if (!empty($failed_files) && $showFailed)
-        <div class="card" x-data x-show="true" x-transition>
-            <h2 style="font-size: 1.25rem; font-weight: 500; color: #202124; margin-bottom: 1rem;">
-                ❌ Failed Processing ({{ count($failed_files) }})
-            </h2>
-
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-                @foreach ($failed_files as $file)
-                    <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: #fce8e6; border-radius: 8px; border-left: 4px solid #d93025;">
-                        <!-- Thumbnail -->
-                        <img src="{{ $file['url'] }}" alt="{{ $file['filename'] }}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px;">
-
-                        <!-- File Info -->
-                        <div style="flex: 1;">
-                            <div style="font-weight: 500; color: #202124; margin-bottom: 0.25rem;">
-                                {{ $file['filename'] }}
-                            </div>
-
-                            <!-- File Type Badge -->
-                            <div style="display: inline-block; background: #d93025; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.25rem;">
-                                {{ $file['media_type'] }}
-                            </div>
-
-                            <!-- Error Message -->
-                            <div style="font-size: 0.875rem; color: #d93025; margin-top: 0.25rem;">
-                                Error: {{ $file['error'] }}
-                            </div>
-                        </div>
-
-                        <!-- Quick Actions -->
-                        <div style="display: flex; gap: 0.5rem;">
-                            <!-- Download Button -->
-                            <button wire:click="downloadFile({{ $file['id'] }})" class="btn btn-secondary" style="font-size: 0.875rem; padding: 0.5rem 1rem;" title="Download file">
-                                <span class="material-symbols-outlined" style="font-size: 1rem;">download</span>
-                            </button>
-
-                            <!-- Retry Button -->
-                            <button wire:click="retryFailed({{ $file['id'] }})" class="btn btn-secondary" style="font-size: 0.875rem; padding: 0.5rem 1rem;" title="Retry processing">
-                                <span class="material-symbols-outlined" style="font-size: 1rem;">refresh</span>
-                            </button>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-        </div>
-    @endif
-
-    <!-- Empty State -->
-    @if (empty($pending_files) && empty($processing_files) && empty($completed_files) && empty($failed_files))
-        <div class="empty-state">
-            <div class="empty-state-icon">✅</div>
-            <h2 class="empty-state-title">All Caught Up!</h2>
-            <p class="empty-state-description">No files currently processing</p>
-            <a wire:navigate href="{{ route('instant-upload') }}" class="btn btn-primary">
-                <span class="material-symbols-outlined" style="font-size: 1.125rem;">bolt</span>
-                Upload More Files
+        <!-- Quick Actions -->
+        <div class="flex justify-center gap-4">
+            <a href="{{ route('gallery') }}" 
+               class="inline-flex items-center gap-2 px-6 py-3 bg-white hover:bg-gray-50 text-primary-600 font-medium rounded-lg border-2 border-primary-200 hover:border-primary-300 transition-all duration-200 shadow-md3-1 hover:shadow-md3-2">
+                <span class="material-symbols-outlined">photo_library</span>
+                <span>View Gallery</span>
+            </a>
+            <a href="{{ route('instant-upload') }}" 
+               class="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg shadow-md3-2 hover:shadow-md3-3 transition-all duration-200">
+                <span class="material-symbols-outlined">cloud_upload</span>
+                <span>Upload More</span>
             </a>
         </div>
-    @endif
+    </div>
 </div>
-

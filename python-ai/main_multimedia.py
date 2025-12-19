@@ -448,12 +448,21 @@ def get_florence_model():
                 trust_remote_code=True,
                 torch_dtype=torch.float32  # Use float32 for CPU/Apple Silicon compatibility
             )
+            # Add _supports_sdpa attribute if missing (compatibility fix)
+            if not hasattr(florence_model, '_supports_sdpa'):
+                florence_model._supports_sdpa = False
             florence_model.to(device)
             florence_model.eval()
             logger.info("Florence-2 model loaded successfully!")
         except Exception as e:
             logger.error(f"Failed to load Florence-2: {str(e)}")
+            # Set to False to prevent retry
+            florence_processor = False
+            florence_model = False
             return None, None
+    # Check if previous load failed
+    if florence_processor is False or florence_model is False:
+        return None, None
     return florence_processor, florence_model
 
 

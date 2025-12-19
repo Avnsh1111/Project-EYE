@@ -30,7 +30,7 @@
                 >
                 @error('email')
                     <div class="form-error">
-                        <span class="material-symbols-outlined" style="font-size: 16px;">error</span>
+                        <span class="material-symbols-outlined text-base">error</span>
                         {{ $message }}
                     </div>
                 @enderror
@@ -50,14 +50,14 @@
                     <span 
                         class="input-icon material-symbols-outlined" 
                         wire:click="togglePasswordVisibility"
-                        style="cursor: pointer;"
+                        class="cursor-pointer"
                     >
                         {{ $showPassword ? 'visibility_off' : 'visibility' }}
                     </span>
                 </div>
                 @error('password')
                     <div class="form-error">
-                        <span class="material-symbols-outlined" style="font-size: 16px;">error</span>
+                        <span class="material-symbols-outlined text-base">error</span>
                         {{ $message }}
                     </div>
                 @enderror
@@ -86,14 +86,14 @@
                     <span 
                         class="input-icon material-symbols-outlined" 
                         wire:click="togglePasswordConfirmationVisibility"
-                        style="cursor: pointer;"
+                        class="cursor-pointer"
                     >
                         {{ $showPasswordConfirmation ? 'visibility_off' : 'visibility' }}
                     </span>
                 </div>
                 @error('password_confirmation')
                     <div class="form-error">
-                        <span class="material-symbols-outlined" style="font-size: 16px;">error</span>
+                        <span class="material-symbols-outlined text-base">error</span>
                         {{ $message }}
                     </div>
                 @enderror
@@ -102,7 +102,7 @@
             <button type="submit" class="btn btn-primary" wire:loading.attr="disabled">
                 <span wire:loading.remove wire:target="resetPassword">Reset password</span>
                 <span wire:loading wire:target="resetPassword">
-                    <span style="display: inline-block; width: 16px; height: 16px; border: 2px solid white; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite;"></span>
+                    <span class="spinner"></span>
                     Resetting...
                 </span>
             </button>
@@ -113,9 +113,4 @@
         </div>
     </div>
 
-    <style>
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-    </style>
 </div>

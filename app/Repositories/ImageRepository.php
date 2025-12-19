@@ -301,15 +301,15 @@ class ImageRepository
     public function getStatistics(): array
     {
         return [
-            'total' => MediaFile::count(),
-            'favorites' => MediaFile::where('is_favorite', true)->count(),
-            'trashed' => MediaFile::onlyTrashed()->count(),
-            'completed' => MediaFile::where('processing_status', 'completed')->count(),
-            'pending' => MediaFile::where('processing_status', 'pending')->count(),
-            'processing' => MediaFile::where('processing_status', 'processing')->count(),
-            'failed' => MediaFile::where('processing_status', 'failed')->count(),
-            'with_faces' => MediaFile::where('face_count', '>', 0)->count(),
-            'with_gps' => MediaFile::whereNotNull('gps_latitude')->whereNotNull('gps_longitude')->count(),
+            'total' => MediaFile::where('media_type', 'image')->count(),
+            'favorites' => MediaFile::where('media_type', 'image')->where('is_favorite', true)->count(),
+            'trashed' => MediaFile::where('media_type', 'image')->onlyTrashed()->count(),
+            'completed' => MediaFile::where('media_type', 'image')->where('processing_status', 'completed')->count(),
+            'pending' => MediaFile::where('media_type', 'image')->where('processing_status', 'pending')->count(),
+            'processing' => MediaFile::where('media_type', 'image')->where('processing_status', 'processing')->count(),
+            'failed' => MediaFile::where('media_type', 'image')->where('processing_status', 'failed')->count(),
+            'with_faces' => MediaFile::where('media_type', 'image')->where('face_count', '>', 0)->count(),
+            'with_gps' => MediaFile::where('media_type', 'image')->whereNotNull('gps_latitude')->whereNotNull('gps_longitude')->count(),
         ];
     }
 

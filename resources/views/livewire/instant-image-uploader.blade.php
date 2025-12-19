@@ -1,343 +1,264 @@
-<div wire:poll.2s="refreshProcessingStatus" x-data="uploadManager()" @keydown.escape="clearSelection" @paste.window="handlePaste($event)">
-    <!-- Header with Statistics -->
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
-        <div>
-            <h1 style="font-size: 1.75rem; font-weight: 500; color: #202124; display: flex; align-items: center; gap: 0.75rem;">
-                <span style="font-size: 2rem;">⚡</span>
-                Instant Upload
-            </h1>
-            <p style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--secondary-color);">
-                Upload files instantly with AI-powered analysis happening in the background
-            </p>
-        </div>
+<div wire:poll.2s="refreshProcessingStatus" 
+     x-data="uploadManager()" 
+     @keydown.escape="clearSelection" 
+     @paste.window="handlePaste($event)"
+     class="min-h-screen bg-surface-variant p-4 sm:p-6 lg:p-8">
 
-        @if (!empty($uploaded_files))
-            <div style="display: flex; gap: 0.75rem;">
-                <div style="padding: 0.75rem 1rem; background: #e6f4ea; border-radius: 8px; text-align: center;">
-                    <div style="font-size: 0.75rem; color: #137333; font-weight: 500;">Completed</div>
-                    <div style="font-size: 1.5rem; font-weight: 700; color: #137333;">{{ $upload_statistics['success_count'] }}</div>
-                </div>
-                @if ($upload_statistics['failed_count'] > 0)
-                    <div style="padding: 0.75rem 1rem; background: #fce8e6; border-radius: 8px; text-align: center;">
-                        <div style="font-size: 0.75rem; color: #d93025; font-weight: 500;">Failed</div>
-                        <div style="font-size: 1.5rem; font-weight: 700; color: #d93025;">{{ $upload_statistics['failed_count'] }}</div>
-                    </div>
-                @endif
-                <div style="padding: 0.75rem 1rem; background: #e8f0fe; border-radius: 8px; text-align: center;">
-                    <div style="font-size: 0.75rem; color: #1967d2; font-weight: 500;">Total Size</div>
-                    <div style="font-size: 1rem; font-weight: 700; color: #1967d2;">{{ number_format($upload_statistics['total_size'] / 1048576, 1) }} MB</div>
-                </div>
-            </div>
-        @endif
-    </div>
-
-    <!-- Validation Errors -->
-    @if ($errors->any())
-        <div class="alert alert-error" style="margin-bottom: 1.5rem;">
-            <span class="material-symbols-outlined">error</span>
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex items-start justify-between mb-8 flex-wrap gap-4">
             <div>
-                <strong>Validation errors</strong>
-                <ul style="margin: 0.5rem 0 0 1.25rem;">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        </div>
-    @endif
-
-    <!-- Upload Card -->
-    <div class="card" style="padding: 0; overflow: hidden;">
-        <form wire:submit.prevent="uploadInstantly">
-            <!-- Drag and Drop Upload Area -->
-            <label
-                for="files"
-                class="file-upload-area"
-                style="min-height: 280px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0; border-radius: 0; border: none; border-bottom: 1px solid var(--border-color);"
-                @dragover="$el.style.borderColor = 'var(--primary-color)'; $el.style.background = '#e8f0fe'"
-                @dragleave="$el.style.borderColor = 'var(--border-color)'; $el.style.background = '#fafafa'"
-                @drop="$el.style.borderColor = 'var(--border-color)'; $el.style.background = '#fafafa'"
-            >
-                <!-- Loading State -->
-                <div wire:loading wire:target="files" style="text-align: center;">
-                    <div class="spinner"></div>
-                    <p style="color: var(--secondary-color); font-weight: 500;">Loading files...</p>
-                </div>
-
-                <!-- Upload Icon -->
-                <div wire:loading.remove wire:target="files">
-                    @if (!empty($files))
-                        <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #34a853, #137333); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
-                            <span class="material-symbols-outlined" style="font-size: 40px; color: white;">check</span>
-                        </div>
-                        <h3 style="font-size: 1.5rem; font-weight: 500; color: #202124; margin-bottom: 0.5rem;">
-                            {{ count($files) }} {{ Str::plural('file', count($files)) }} ready to upload
-                        </h3>
-                        <p style="color: var(--secondary-color);">Click "Upload Instantly" to start processing</p>
-                    @else
-                        <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #1a73e8, #1765cc); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
-                            <span class="material-symbols-outlined" style="font-size: 40px; color: white;">cloud_upload</span>
-                        </div>
-                        <h3 style="font-size: 1.5rem; font-weight: 500; color: #202124; margin-bottom: 0.5rem;">
-                            Drop files here or click to browse
-                        </h3>
-                        <p style="color: var(--secondary-color); margin-bottom: 1rem;">
-                            Supports images, videos, documents, audio, and more • Up to 500MB per file
-                        </p>
-                        <div style="display: flex; align-items: center; justify-content: center; gap: 2rem; color: var(--secondary-color); font-size: 0.875rem;">
-                            <span style="display: flex; align-items: center; gap: 0.5rem;">
-                                <span class="material-symbols-outlined" style="font-size: 20px;">image</span>
-                                Images
-                            </span>
-                            <span style="display: flex; align-items: center; gap: 0.5rem;">
-                                <span class="material-symbols-outlined" style="font-size: 20px;">videocam</span>
-                                Videos
-                            </span>
-                            <span style="display: flex; align-items: center; gap: 0.5rem;">
-                                <span class="material-symbols-outlined" style="font-size: 20px;">description</span>
-                                Documents
-                            </span>
-                        </div>
-                    @endif
-                </div>
-
-                <!-- Keyboard Shortcut Hint -->
-                <div wire:loading.remove wire:target="files" style="margin-top: 2rem; display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: #9aa0a6;">
-                    <kbd style="padding: 0.25rem 0.5rem; background: #f1f3f4; border: 1px solid var(--border-color); border-radius: 4px; font-family: monospace;">Ctrl</kbd>
-                    <span>+</span>
-                    <kbd style="padding: 0.25rem 0.5rem; background: #f1f3f4; border: 1px solid var(--border-color); border-radius: 4px; font-family: monospace;">V</kbd>
-                    <span>to paste from clipboard</span>
-                </div>
-            </label>
-
-            <input type="file" id="files" wire:model="files" multiple style="display: none;">
-
-            <!-- Action Buttons -->
-            <div style="padding: 1.25rem 1.5rem; background: #f8f9fa; display: flex; gap: 1rem;">
-                <button
-                    type="submit"
-                    class="btn btn-primary"
-                    style="flex: 1; padding: 0.875rem 1.5rem; font-size: 1rem;"
-                    wire:loading.attr="disabled"
-                    wire:target="files,uploadInstantly"
-                    @disabled($uploading || empty($files))
-                >
-                    <span wire:loading.remove wire:target="uploadInstantly" class="material-symbols-outlined" style="font-size: 20px;">bolt</span>
-                    <span wire:loading wire:target="uploadInstantly" class="spinner" style="width: 20px; height: 20px; border-width: 2px; margin: 0;"></span>
-                    <span wire:loading.remove wire:target="uploadInstantly">Upload Instantly</span>
-                    <span wire:loading wire:target="uploadInstantly">Uploading...</span>
-                </button>
-
-                @if (!empty($uploaded_files))
-                    <button
-                        type="button"
-                        wire:click="clearUploaded"
-                        class="btn btn-secondary"
-                        style="padding: 0.875rem 1.5rem;"
-                        wire:loading.attr="disabled"
-                    >
-                        <span class="material-symbols-outlined" style="font-size: 20px;">refresh</span>
-                        Clear All
-                    </button>
-                @endif
-            </div>
-        </form>
-
-        <!-- Upload Progress Bar -->
-        @if ($uploading && $total_files > 0)
-            <div style="padding: 1rem 1.5rem; background: #e8f0fe; border-top: 1px solid #d2e3fc;">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
-                    <span style="font-size: 0.875rem; font-weight: 500; color: #1967d2;">Uploading files...</span>
-                    <span style="font-size: 1rem; font-weight: 700; color: #1967d2;">{{ $uploaded_count }} / {{ $total_files }}</span>
-                </div>
-                <div style="width: 100%; height: 8px; background: #c2d9fc; border-radius: 4px; overflow: hidden;">
-                    <div style="height: 100%; background: linear-gradient(90deg, #1a73e8, #1967d2); border-radius: 4px; transition: width 0.3s ease; width: {{ $total_files > 0 ? ($uploaded_count / $total_files) * 100 : 0 }}%;"></div>
-                </div>
-            </div>
-        @endif
-    </div>
-
-    <!-- Processing Status Section -->
-    @if (!empty($uploaded_files))
-        <!-- Success Banner -->
-        <div class="alert alert-success" style="margin-top: 2rem; padding: 1.25rem;">
-            <span class="material-symbols-outlined" style="font-size: 32px;">check_circle</span>
-            <div style="flex: 1;">
-                <strong style="font-size: 1rem;">{{ count($uploaded_files) }} {{ Str::plural('file', count($uploaded_files)) }} uploaded successfully!</strong>
-                <p style="margin-top: 0.25rem; font-size: 0.875rem; opacity: 0.9;">
-                    AI analysis is processing in the background. Real-time updates below. You can continue browsing.
+                <h1 class="text-3xl font-display font-bold text-gray-900 flex items-center gap-3 mb-2">
+                    <div class="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center shadow-md3-2">
+                        <span class="material-symbols-outlined text-white text-2xl">cloud_upload</span>
+                    </div>
+                    <span>Instant Upload</span>
+                </h1>
+                <p class="text-base text-gray-600 ml-15">
+                    Upload files instantly with AI-powered analysis happening in the background
                 </p>
             </div>
-            <a wire:navigate href="{{ route('processing-status') }}" class="btn btn-secondary" style="background: white;">
-                <span class="material-symbols-outlined" style="font-size: 18px;">analytics</span>
-                View All
-            </a>
-        </div>
 
-        <!-- File Processing Grid -->
-        <div style="margin-top: 1.5rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
-            @foreach ($uploaded_files as $file)
-                <div class="card" style="padding: 0; overflow: hidden;">
-                    <!-- File Preview -->
-                    <div style="position: relative; aspect-ratio: 16/10; background: #f1f3f4;">
-                        @if ($file['url'])
-                            <img src="{{ $file['url'] }}" alt="{{ $file['filename'] }}" style="width: 100%; height: 100%; object-fit: cover;" loading="lazy">
-                        @else
-                            <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
-                                <span class="material-symbols-outlined" style="font-size: 48px; color: #9aa0a6;">description</span>
-                            </div>
-                        @endif
-
-                        <!-- Status Overlay -->
-                        @if ($file['status'] !== 'completed')
-                            <div style="position: absolute; inset: 0; background: rgba(0,0,0,0.7); display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                                @if ($file['status'] === 'processing')
-                                    <div class="spinner" style="border-top-color: #1a73e8; margin: 0;"></div>
-                                    <p style="margin-top: 0.75rem; color: white; font-weight: 500; font-size: 0.875rem;">
-                                        {{ ucfirst(str_replace('_', ' ', $file['processing_stage'] ?? 'Processing')) }}
-                                    </p>
-                                    @if (isset($file['elapsed']))
-                                        <p style="margin-top: 0.25rem; color: rgba(255,255,255,0.7); font-size: 0.75rem;">{{ $file['elapsed'] }}</p>
-                                    @endif
-                                @elseif ($file['status'] === 'failed')
-                                    <span class="material-symbols-outlined" style="font-size: 40px; color: #ea4335;">error</span>
-                                    <p style="margin-top: 0.5rem; color: white; font-weight: 500; font-size: 0.875rem;">Failed</p>
-                                @else
-                                    <div class="spinner" style="border-top-color: #9aa0a6; margin: 0;"></div>
-                                    <p style="margin-top: 0.75rem; color: white; font-weight: 500; font-size: 0.875rem;">Queued</p>
-                                @endif
-                            </div>
-                        @endif
-
-                        <!-- Status Badge -->
-                        <div style="position: absolute; top: 0.75rem; right: 0.75rem;">
-                            @if ($file['status'] === 'completed')
-                                <span class="tag" style="background: #34a853; color: white; font-size: 0.7rem;">
-                                    <span class="material-symbols-outlined" style="font-size: 14px; margin-right: 0.25rem;">check</span>
-                                    Complete
-                                </span>
-                            @elseif ($file['status'] === 'processing')
-                                <span class="tag" style="background: #1a73e8; color: white; font-size: 0.7rem;">
-                                    <span style="width: 6px; height: 6px; background: white; border-radius: 50%; margin-right: 0.25rem; animation: pulse 1s infinite;"></span>
-                                    Processing
-                                </span>
-                            @elseif ($file['status'] === 'failed')
-                                <span class="tag" style="background: #ea4335; color: white; font-size: 0.7rem;">
-                                    <span class="material-symbols-outlined" style="font-size: 14px; margin-right: 0.25rem;">close</span>
-                                    Failed
-                                </span>
-                            @else
-                                <span class="tag" style="background: #5f6368; color: white; font-size: 0.7rem;">
-                                    <span class="material-symbols-outlined" style="font-size: 14px; margin-right: 0.25rem;">schedule</span>
-                                    Pending
-                                </span>
-                            @endif
-                        </div>
-
-                        <!-- Remove Button -->
-                        <button
-                            wire:click="removeUploadedFile({{ $file['id'] }})"
-                            style="position: absolute; top: 0.75rem; left: 0.75rem; width: 28px; height: 28px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s;"
-                            onmouseover="this.style.background='#ea4335'"
-                            onmouseout="this.style.background='rgba(0,0,0,0.6)'"
-                            title="Remove from list"
-                        >
-                            <span class="material-symbols-outlined" style="font-size: 18px;">close</span>
-                        </button>
+            @if (!empty($uploaded_files))
+                <div class="flex gap-3">
+                    <div class="px-4 py-3 bg-green-50 border border-green-200 rounded-xl text-center min-w-[100px]">
+                        <div class="text-xs font-medium text-green-700 mb-1">Completed</div>
+                        <div class="text-2xl font-bold text-green-700">{{ $upload_statistics['success_count'] }}</div>
                     </div>
-
-                    <!-- File Info -->
-                    <div style="padding: 1rem;">
-                        <h4 style="font-weight: 500; color: #202124; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ $file['filename'] }}">
-                            {{ $file['filename'] }}
-                        </h4>
-                        <div style="margin-top: 0.5rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--secondary-color);">
-                            <span style="text-transform: capitalize;">{{ str_replace('_', ' ', $file['media_type']) }}</span>
-                            @if (isset($file['file_size_human']))
-                                <span>{{ $file['file_size_human'] }}</span>
-                            @endif
+                    @if ($upload_statistics['failed_count'] > 0)
+                        <div class="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-center min-w-[100px]">
+                            <div class="text-xs font-medium text-red-700 mb-1">Failed</div>
+                            <div class="text-2xl font-bold text-red-700">{{ $upload_statistics['failed_count'] }}</div>
                         </div>
-
-                        <!-- Error Message -->
-                        @if ($file['status'] === 'failed' && isset($file['error']))
-                            <div style="margin-top: 0.75rem; padding: 0.5rem 0.75rem; background: #fce8e6; border-radius: 4px; font-size: 0.75rem; color: #d93025;">
-                                {{ $file['error'] }}
-                            </div>
-                        @endif
-
-                        <!-- Action Buttons -->
-                        <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem;">
-                            @if ($file['status'] === 'failed' && $file['id'])
-                                <button
-                                    wire:click="retryFile({{ $file['id'] }})"
-                                    class="btn btn-primary"
-                                    style="flex: 1; padding: 0.5rem 0.75rem; font-size: 0.75rem;"
-                                >
-                                    <span class="material-symbols-outlined" style="font-size: 16px;">refresh</span>
-                                    Retry
-                                </button>
-                            @endif
-                            @if ($file['status'] === 'completed')
-                                <a wire:navigate href="{{ route('gallery') }}" class="btn btn-primary" style="flex: 1; padding: 0.5rem 0.75rem; font-size: 0.75rem; text-decoration: none; justify-content: center;">
-                                    <span class="material-symbols-outlined" style="font-size: 16px;">visibility</span>
-                                    View
-                                </a>
-                            @endif
-                        </div>
+                    @endif
+                    <div class="px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl text-center min-w-[100px]">
+                        <div class="text-xs font-medium text-blue-700 mb-1">Total Size</div>
+                        <div class="text-lg font-bold text-blue-700">{{ number_format($upload_statistics['total_size'] / 1048576, 1) }} MB</div>
                     </div>
                 </div>
-            @endforeach
+            @endif
         </div>
 
-        <!-- Info Panel -->
-        <div class="alert alert-info" style="margin-top: 2rem; align-items: flex-start;">
-            <span class="material-symbols-outlined" style="font-size: 24px;">info</span>
-            <div style="flex: 1;">
-                <strong>Background AI Processing Active</strong>
-                <p style="margin-top: 0.5rem; font-size: 0.875rem;">Your files are being analyzed with advanced AI processing:</p>
-                <ul style="margin-top: 0.5rem; margin-left: 1.25rem; font-size: 0.875rem;">
-                    <li>Content analysis and intelligent captioning</li>
-                    <li>Vector embeddings for semantic search</li>
-                    <li>Comprehensive metadata extraction (EXIF, duration, properties)</li>
-                    <li>AI-generated tags and detailed descriptions</li>
-                    <li>Face detection and recognition (for images)</li>
-                </ul>
+        <!-- Validation Errors -->
+        @if ($errors->any())
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl shadow-md3-1 mb-6 animate-slide-up">
+                <div class="flex items-start gap-3">
+                    <span class="material-symbols-outlined text-red-600">error</span>
+                    <div class="flex-1">
+                        <strong class="text-red-800 font-medium">Validation errors</strong>
+                        <ul class="mt-2 ml-5 list-disc text-sm text-red-700">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </div>
             </div>
-        </div>
-    @endif
+        @endif
 
-    <script>
+        <!-- Upload Card -->
+        <div class="bg-white rounded-2xl shadow-md3-2 overflow-hidden animate-fade-in">
+            <form wire:submit.prevent="uploadInstantly">
+                <!-- Drag and Drop Area -->
+                <label
+                    for="files"
+                    class="block min-h-[320px] flex flex-col items-center justify-center cursor-pointer border-b-2 border-dashed border-outline hover:border-primary-500 hover:bg-primary-50/30 transition-all duration-200 p-8"
+                    @dragover.prevent="$el.classList.add('!border-primary-500', '!bg-primary-50')"
+                    @dragleave.prevent="$el.classList.remove('!border-primary-500', '!bg-primary-50')"
+                    @drop.prevent="$el.classList.remove('!border-primary-500', '!bg-primary-50')"
+                >
+                    <!-- Loading State -->
+                    <div wire:loading wire:target="files" class="text-center">
+                        <div class="w-16 h-16 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mx-auto mb-4"></div>
+                        <p class="text-gray-600 font-medium">Loading files...</p>
+                    </div>
+
+                    <!-- Upload Content -->
+                    <div wire:loading.remove wire:target="files" class="text-center">
+                        @if (!empty($files))
+                            <div class="w-20 h-20 bg-gradient-to-br from-green-500 to-green-700 rounded-full flex items-center justify-center mx-auto mb-4 shadow-md3-3 animate-scale-in">
+                                <span class="material-symbols-outlined text-white text-5xl">check</span>
+                            </div>
+                            <h3 class="text-2xl font-semibold text-gray-900 mb-2">
+                                {{ count($files) }} {{ Str::plural('file', count($files)) }} ready
+                            </h3>
+                            <p class="text-gray-600">Click "Upload Instantly" to start processing</p>
+                        @else
+                            <div class="w-20 h-20 bg-gradient-to-br from-primary-500 to-primary-700 rounded-full flex items-center justify-center mx-auto mb-4 shadow-md3-3">
+                                <span class="material-symbols-outlined text-white text-5xl">cloud_upload</span>
+                            </div>
+                            <h3 class="text-2xl font-semibold text-gray-900 mb-2">
+                                Drop files here or click to browse
+                            </h3>
+                            <p class="text-gray-600 mb-6">
+                                Supports images, videos, documents, audio • Up to 500MB per file
+                            </p>
+                            <div class="flex items-center justify-center gap-6 flex-wrap text-gray-500 text-sm">
+                                <span class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-xl">image</span>
+                                    <span>Images</span>
+                                </span>
+                                <span class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-xl">videocam</span>
+                                    <span>Videos</span>
+                                </span>
+                                <span class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-xl">description</span>
+                                    <span>Documents</span>
+                                </span>
+                                <span class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-xl">audiotrack</span>
+                                    <span>Audio</span>
+                                </span>
+                            </div>
+                        @endif
+                    </div>
+
+                    <input
+                        type="file"
+                        id="files"
+                        wire:model="files"
+                        multiple
+                        accept="image/*,video/*,.pdf,.doc,.docx,.txt,.mp3,.wav"
+                        class="hidden"
+                    >
+                </label>
+
+                <!-- Action Buttons -->
+                @if (!empty($files))
+                    <div class="p-6 bg-surface-variant flex items-center justify-between gap-4 flex-wrap">
+                        <p class="text-sm text-gray-600">
+                            <span class="font-medium text-gray-900">{{ count($files) }}</span> {{ Str::plural('file', count($files)) }} selected
+                        </p>
+                        <div class="flex gap-3">
+                            <button
+                                type="button"
+                                wire:click="clearFiles"
+                                class="px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-700 font-medium rounded-lg border-2 border-outline transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-gray-200">
+                                Clear
+                            </button>
+                            <button
+                                type="submit"
+                                wire:loading.attr="disabled"
+                                class="inline-flex items-center gap-2 px-6 py-2.5 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white font-medium rounded-lg shadow-md3-2 hover:shadow-md3-3 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-primary-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <span wire:loading.remove wire:target="uploadInstantly">
+                                    <span class="material-symbols-outlined text-xl">upload</span>
+                                </span>
+                                <span wire:loading wire:target="uploadInstantly">
+                                    <div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                </span>
+                                <span>Upload Instantly</span>
+                            </button>
+                        </div>
+                    </div>
+                @endif
+            </form>
+        </div>
+
+        <!-- Uploaded Files Grid -->
+        @if (!empty($uploaded_files))
+            <div class="mt-8">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Recently Uploaded</h2>
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                    @foreach ($uploaded_files as $file)
+                        <div class="bg-white rounded-xl shadow-md3-1 hover:shadow-md3-3 overflow-hidden transition-all duration-200 hover:-translate-y-1 animate-fade-in">
+                            <!-- Thumbnail -->
+                            <div class="aspect-square bg-gray-100 relative overflow-hidden group">
+                                @if (isset($file['thumbnail_url']) && $file['thumbnail_url'])
+                                    <img src="{{ $file['thumbnail_url'] }}" 
+                                         alt="{{ $file['original_filename'] ?? 'File' }}"
+                                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                @else
+                                    <div class="w-full h-full flex items-center justify-center bg-gray-100">
+                                        <span class="material-symbols-outlined text-4xl text-gray-400">description</span>
+                                    </div>
+                                @endif
+
+                                <!-- Processing Status -->
+                                @if (isset($file['processing_status']) && $file['processing_status'] === 'processing')
+                                    <div class="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                        <div class="text-center">
+                                            <div class="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                                            <span class="text-white text-xs font-medium">Processing...</span>
+                                        </div>
+                                    </div>
+                                @elseif (isset($file['processing_status']) && $file['processing_status'] === 'completed')
+                                    <div class="absolute top-2 right-2">
+                                        <div class="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow-md3-2">
+                                            <span class="material-symbols-outlined text-white text-sm">check</span>
+                                        </div>
+                                    </div>
+                                @elseif (isset($file['processing_status']) && $file['processing_status'] === 'failed')
+                                    <div class="absolute inset-0 bg-red-500/10 flex items-center justify-center">
+                                        <div class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center shadow-md3-2">
+                                            <span class="material-symbols-outlined text-white">error</span>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+
+                            <!-- File Info -->
+                            <div class="p-3">
+                                <p class="text-xs font-medium text-gray-900 truncate" title="{{ $file['original_filename'] ?? 'Untitled' }}">
+                                    {{ $file['original_filename'] ?? 'Untitled' }}
+                                </p>
+                                <div class="flex items-center justify-between mt-1">
+                                    @if (isset($file['file_size']))
+                                        <span class="text-xs text-gray-500">
+                                            {{ number_format($file['file_size'] / 1024, 0) }} KB
+                                        </span>
+                                    @endif
+                                    @if (isset($file['processing_status']))
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium
+                                            {{ $file['processing_status'] === 'completed' ? 'bg-green-50 text-green-700' : 
+                                               ($file['processing_status'] === 'processing' ? 'bg-blue-50 text-blue-700' : 
+                                               'bg-red-50 text-red-700') }}">
+                                            <span class="w-1.5 h-1.5 rounded-full 
+                                                {{ $file['processing_status'] === 'completed' ? 'bg-green-500' : 
+                                                   ($file['processing_status'] === 'processing' ? 'bg-blue-500 animate-pulse' : 
+                                                   'bg-red-500') }}">
+                                            </span>
+                                            {{ ucfirst($file['processing_status']) }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+
+                <!-- View All Link -->
+                <div class="mt-6 text-center">
+                    <a href="{{ route('gallery') }}" 
+                       class="inline-flex items-center gap-2 px-6 py-3 bg-white hover:bg-gray-50 text-primary-600 font-medium rounded-lg border-2 border-primary-200 hover:border-primary-300 transition-all duration-200 shadow-md3-1 hover:shadow-md3-2">
+                        <span>View all photos</span>
+                        <span class="material-symbols-outlined">arrow_forward</span>
+                    </a>
+                </div>
+            </div>
+        @endif
+    </div>
+</div>
+
+<script>
     function uploadManager() {
         return {
-            handlePaste(e) {
-                const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            handlePaste(event) {
+                const items = (event.clipboardData || event.originalEvent.clipboardData).items;
                 for (let item of items) {
-                    if (item.kind === 'file') {
-                        console.log('File pasted from clipboard');
+                    if (item.type.indexOf('image') !== -1) {
+                        const blob = item.getAsFile();
+                        // Trigger file input with pasted image
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(blob);
+                        document.getElementById('files').files = dataTransfer.files;
+                        document.getElementById('files').dispatchEvent(new Event('change', { bubbles: true }));
                     }
                 }
             },
             clearSelection() {
-                console.log('Escape pressed');
+                @this.clearFiles();
             }
         }
     }
-
-    document.addEventListener('livewire:initialized', () => {
-        Livewire.on('upload-complete', (event) => {
-            console.log(`${event.count} files uploaded and queued for processing`);
-        });
-
-        Livewire.on('file-retried', (event) => {
-            console.log(`File ${event.fileId} retry initiated`);
-        });
-    });
-    </script>
-
-    <style>
-    @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
-    }
-    </style>
-</div>
+</script>

@@ -30,7 +30,7 @@
                 >
                 @error('email')
                     <div class="form-error">
-                        <span class="material-symbols-outlined" style="font-size: 16px;">error</span>
+                        <span class="material-symbols-outlined text-base">error</span>
                         {{ $message }}
                     </div>
                 @enderror
@@ -39,7 +39,7 @@
             <button type="submit" class="btn btn-primary" wire:loading.attr="disabled">
                 <span wire:loading.remove wire:target="sendResetLink">Send reset link</span>
                 <span wire:loading wire:target="sendResetLink">
-                    <span style="display: inline-block; width: 16px; height: 16px; border: 2px solid white; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite;"></span>
+                    <span class="spinner"></span>
                     Sending...
                 </span>
             </button>
@@ -50,9 +50,4 @@
         </div>
     </div>
 
-    <style>
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-    </style>
 </div>

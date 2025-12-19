@@ -19,6 +19,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Register MediaFile observer for automatic folder organization
+        \App\Models\MediaFile::observe(\App\Observers\MediaFileObserver::class);
     }
 }

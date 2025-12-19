@@ -8,6 +8,7 @@ use App\Services\ImageService;
 use App\Services\SearchService;
 use App\Repositories\ImageRepository;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class EnhancedImageGallery extends Component
 {
@@ -33,9 +34,13 @@ class EnhancedImageGallery extends Component
 
     public $files = [];
     public $selectedImage = null;
+    public $nextFileId = null;
+    public $previousFileId = null;
     public $filterTag = '';
     public $showFavorites = false;
     public $showTrash = false;
+    public $facesFilter = ''; // Face/person filter (ID or name)
+    public $facesFilterName = ''; // Display name for the face filter
     
     // Search
     public $searchQuery = '';
@@ -70,8 +75,13 @@ class EnhancedImageGallery extends Component
         // Check for search query from URL
         $this->searchQuery = request()->query('q', '');
         
+        // Check for faces filter from URL (like Google Photos)
+        $this->facesFilter = request()->query('faces', '');
+        
         if ($this->searchQuery) {
             $this->performSearch();
+        } elseif ($this->facesFilter) {
+            $this->loadImagesByFace();
         } else {
             $this->loadImages();
         }
@@ -91,6 +101,47 @@ class EnhancedImageGallery extends Component
         $images = $this->imageService->loadImages($filters, $this->sortBy, $this->sortDirection);
         $this->files = $this->imageService->transformCollectionForDisplay($images);
         $this->searchResultsCount = 0;
+    }
+    
+    public function loadImagesByFace()
+    {
+        // Find the face cluster to get its name
+        $faceCluster = null;
+        if (is_numeric($this->facesFilter)) {
+            $faceCluster = \App\Models\FaceCluster::find($this->facesFilter);
+        } else {
+            $faceCluster = \App\Models\FaceCluster::where('name', $this->facesFilter)->first();
+        }
+        
+        // Set display name
+        if ($faceCluster) {
+            $this->facesFilterName = $faceCluster->name ?? 'Unknown ' . ucfirst($faceCluster->type);
+        } else {
+            $this->facesFilterName = $this->facesFilter;
+        }
+        
+        // Load images filtered by face/person (like Google Photos)
+        $images = MediaFile::where('media_type', 'image')
+            ->where('processing_status', 'completed')
+            ->when(!$this->showTrash, function ($query) {
+                $query->whereNull('deleted_at');
+            })
+            ->when($this->showTrash, function ($query) {
+                $query->whereNotNull('deleted_at');
+            })
+            ->whereHas('detectedFaces.faceCluster', function ($query) {
+                // Check if filter is numeric (ID) or string (name)
+                if (is_numeric($this->facesFilter)) {
+                    $query->where('id', $this->facesFilter);
+                } else {
+                    $query->where('name', $this->facesFilter);
+                }
+            })
+            ->orderBy($this->sortBy === 'date_taken' ? 'date_taken' : 'created_at', $this->sortDirection)
+            ->get();
+        
+        $this->files = $this->imageService->transformCollectionForDisplay($images);
+        $this->searchResultsCount = count($this->files);
     }
     
     public function performSearch()
@@ -145,10 +196,18 @@ class EnhancedImageGallery extends Component
     {
         $this->searchQuery = '';
         $this->searchResultsCount = 0;
+        $this->facesFilter = '';
         $this->loadImages();
         
         // Redirect to gallery without search parameter
         $this->redirect(route('gallery'), navigate: true);
+    }
+    
+    public function clearFacesFilter()
+    {
+        $this->facesFilter = '';
+        $this->facesFilterName = '';
+        $this->loadImages();
     }
     
     public function loadStats()
@@ -171,6 +230,24 @@ class EnhancedImageGallery extends Component
 
         $this->selectedImage = collect($this->files)->firstWhere('id', $imageId);
         
+        // Calculate next and previous file IDs for navigation
+        $currentIndex = collect($this->files)->search(fn($file) => $file['id'] == $imageId);
+        
+        if ($currentIndex !== false) {
+            // Get next file
+            $this->nextFileId = $currentIndex < count($this->files) - 1 
+                ? $this->files[$currentIndex + 1]['id'] 
+                : null;
+            
+            // Get previous file
+            $this->previousFileId = $currentIndex > 0 
+                ? $this->files[$currentIndex - 1]['id'] 
+                : null;
+        } else {
+            $this->nextFileId = null;
+            $this->previousFileId = null;
+        }
+        
         // Use ImageService to increment view count
         $this->imageService->incrementViewCount($imageId);
     }
@@ -178,6 +255,8 @@ class EnhancedImageGallery extends Component
     public function closeDetails()
     {
         $this->selectedImage = null;
+        $this->nextFileId = null;
+        $this->previousFileId = null;
         // Don't activate selection mode when closing details
         // This ensures normal browsing behavior
     }
@@ -198,9 +277,10 @@ class EnhancedImageGallery extends Component
     public function toggleFavorites()
     {
         $this->showFavorites = !$this->showFavorites;
-        // Clear search when toggling favorites
+        // Clear search and faces filter when toggling favorites
         if ($this->showFavorites) {
             $this->searchQuery = '';
+            $this->facesFilter = '';
         }
         $this->loadImages();
     }
@@ -208,9 +288,10 @@ class EnhancedImageGallery extends Component
     public function toggleTrash()
     {
         $this->showTrash = !$this->showTrash;
-        // Clear search when toggling trash
+        // Clear search and faces filter when toggling trash
         if ($this->showTrash) {
             $this->searchQuery = '';
+            $this->facesFilter = '';
         }
         $this->loadImages();
     }
@@ -381,6 +462,18 @@ class EnhancedImageGallery extends Component
     }
     
     // Sorting
+    public function updatedSortBy()
+    {
+        // Automatically reload images when sort changes
+        if ($this->searchQuery) {
+            $this->performSearch();
+        } elseif ($this->facesFilter) {
+            $this->loadImagesByFace();
+        } else {
+            $this->loadImages();
+        }
+    }
+
     public function sortByDate()
     {
         $this->sortBy = 'created_at';
@@ -393,6 +486,21 @@ class EnhancedImageGallery extends Component
         $this->sortBy = 'original_filename';
         $this->sortDirection = $this->sortDirection === 'desc' ? 'asc' : 'desc';
         $this->loadImages();
+    }
+
+    public function editFile($imageId)
+    {
+        // Placeholder for future image editing functionality
+        $this->editingImage = $imageId;
+        
+        // Log for debugging
+        Log::info('Edit button clicked', ['image_id' => $imageId]);
+        
+        // Show message (will appear at top of gallery)
+        $this->dispatch('notify', 
+            message: 'Edit functionality coming soon!',
+            type: 'info'
+        );
     }
 
     public function reanalyze($imageId)
@@ -413,9 +521,10 @@ class EnhancedImageGallery extends Component
 
             $this->loadImages();
             $this->loadStats();
+            $this->closeDetails();
 
             // Show success message
-            session()->flash('message', 'File queued for reanalysis');
+            session()->flash('message', 'Image queued for AI re-analysis! It will be processed shortly.');
         }
     }
 

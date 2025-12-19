@@ -292,11 +292,13 @@ class ImageService
      */
     public function loadImages(array $filters = [], string $sortBy = 'date_taken', string $sortDirection = 'desc'): Collection
     {
-        $query = MediaFile::query();
+        $query = MediaFile::where('media_type', 'image'); // Only load images, not documents/videos
         
         // Apply filters
         if ($filters['showTrash'] ?? false) {
             $query->onlyTrashed();
+        } else {
+            $query->whereNull('deleted_at');
         }
         
         if ($filters['showFavorites'] ?? false) {
@@ -305,6 +307,13 @@ class ImageService
         
         if (!empty($filters['filterTag'])) {
             $query->whereJsonContains('meta_tags', $filters['filterTag']);
+        }
+        
+        // New: Filter by face cluster ID
+        if (isset($filters['faceClusterId']) && $filters['faceClusterId']) {
+            $query->whereHas('detectedFaces', function ($q) use ($filters) {
+                $q->where('face_cluster_id', $filters['faceClusterId']);
+            });
         }
         
         // Apply sorting

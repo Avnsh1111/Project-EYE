@@ -142,8 +142,9 @@ class SearchService
         $embeddingString = '[' . implode(',', $queryEmbedding) . ']';
         $queryLower = strtolower($query);
         
-        // Fast text search (uses indexes, limited results)
-        $textResults = MediaFile::where('processing_status', 'completed')
+        // Fast text search (uses indexes, limited results) - ONLY IMAGES
+        $textResults = MediaFile::where('media_type', 'image')
+            ->where('processing_status', 'completed')
             ->whereNull('deleted_at')
             ->where(function ($q) use ($query, $queryLower) {
                 $q->where('description', 'ilike', $query . '%')  // Prefix match is faster
@@ -158,19 +159,20 @@ class SearchService
                 return $item;
             });
         
-        // Fast vector search (uses HNSW index, optimized query)
+        // Fast vector search (uses HNSW index, optimized query) - ONLY IMAGES
         $vectorResults = \DB::select("
             SELECT 
                 id,
                 1 - (embedding <=> ?::vector) as similarity
-            FROM image_files
-            WHERE embedding IS NOT NULL
+            FROM media_files
+            WHERE media_type = 'image'
+              AND embedding IS NOT NULL
               AND deleted_at IS NULL
               AND processing_status = 'completed'
               AND (1 - (embedding <=> ?::vector)) >= ?
             ORDER BY embedding <=> ?::vector
             LIMIT ?
-        ", [$embeddingString, self::SEMANTIC_SIMILARITY_THRESHOLD, $embeddingString, $limit + 10]);
+        ", [$embeddingString, $embeddingString, self::SEMANTIC_SIMILARITY_THRESHOLD, $embeddingString, $limit + 10]);
         
         // Get IDs and load models efficiently (single query)
         $ids = collect($vectorResults)->pluck('id')->toArray();
@@ -211,7 +213,8 @@ class SearchService
      */
     protected function fastKeywordSearch(string $query, int $limit): Collection
     {
-        return MediaFile::where('processing_status', 'completed')
+        return MediaFile::where('media_type', 'image')
+            ->where('processing_status', 'completed')
             ->whereNull('deleted_at')
             ->where(function ($q) use ($query) {
                 $q->where('description', 'ilike', $query . '%')  // Prefix match
