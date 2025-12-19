@@ -229,7 +229,7 @@
 
                 <!-- View All Link -->
                 <div class="mt-6 text-center">
-                    <a href="{{ route('gallery') }}" 
+                    <a wire:navigate href="{{ route('gallery') }}"
                        class="inline-flex items-center gap-2 px-6 py-3 bg-white hover:bg-gray-50 text-primary-600 font-medium rounded-lg border-2 border-primary-200 hover:border-primary-300 transition-all duration-200 shadow-md3-1 hover:shadow-md3-2">
                         <span>View all photos</span>
                         <span class="material-symbols-outlined">arrow_forward</span>

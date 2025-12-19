@@ -266,12 +266,12 @@
 
         <!-- Quick Actions -->
         <div class="flex justify-center gap-4">
-            <a href="{{ route('gallery') }}" 
+            <a wire:navigate href="{{ route('gallery') }}"
                class="inline-flex items-center gap-2 px-6 py-3 bg-white hover:bg-gray-50 text-primary-600 font-medium rounded-lg border-2 border-primary-200 hover:border-primary-300 transition-all duration-200 shadow-md3-1 hover:shadow-md3-2">
                 <span class="material-symbols-outlined">photo_library</span>
                 <span>View Gallery</span>
             </a>
-            <a href="{{ route('instant-upload') }}" 
+            <a wire:navigate href="{{ route('instant-upload') }}"
                class="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg shadow-md3-2 hover:shadow-md3-3 transition-all duration-200">
                 <span class="material-symbols-outlined">cloud_upload</span>
                 <span>Upload More</span>

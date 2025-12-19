@@ -4,7 +4,6 @@ namespace App\Livewire;
 
 use Livewire\Component;
 use Livewire\WithFileUploads;
-use App\Models\ImageFile;
 use App\Models\MediaFile;
 use App\Jobs\ProcessImageAnalysis;
 use App\Jobs\ProcessBatchImages;
@@ -13,7 +12,6 @@ use App\Services\MetadataService;
 use App\Services\NodeImageProcessorService;
 use App\Repositories\ImageRepository;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
 
 class InstantImageUploader extends Component
 {

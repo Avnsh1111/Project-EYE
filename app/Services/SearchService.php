@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\MediaFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
 
 /**
  * Search Service
@@ -44,7 +43,7 @@ class SearchService
     const SEMANTIC_SIMILARITY_THRESHOLD = 0.15;
 
     /**
-     * Perform AI-powered semantic search for images.
+     * Perform Elasticsearch-powered search for media files.
      *
      * @param string $query Search query
      * @param int $limit Maximum number of results
@@ -55,77 +54,72 @@ class SearchService
         $startTime = microtime(true);
         $query = trim($query);
         
-        // Cache key for results (cache IDs with similarity scores)
-        $cacheKey = 'search_ids:' . md5($query . ':' . $limit);
-        
-        // Check cache first (5 minute TTL)
-        $cachedData = Cache::get($cacheKey);
-        if ($cachedData !== null && is_array($cachedData)) {
-            Log::info('Search cache hit', ['query' => $query]);
-            // Cached data is array of ['id' => id, 'similarity' => score, 'match_type' => type]
-            $ids = array_column($cachedData, 'id');
-            // Load models from cached IDs
-            $models = MediaFile::whereIn('id', $ids)->get()->keyBy('id');
-            // Return in original order with similarity scores
-            return collect($cachedData)->map(function ($item) use ($models) {
-                $model = $models->get($item['id'] ?? null);
-                if ($model) {
-                    $model->similarity = (float)($item['similarity'] ?? 0.5);
-                    $model->match_type = $item['match_type'] ?? 'semantic';
-                    $model->search_similarity = $model->similarity;
-                    $model->search_match_type = $model->match_type;
-                    return $model;
-                }
-                return null;
-            })->filter()->values();
+        if (strlen($query) < self::MIN_KEYWORD_LENGTH) {
+            return collect([]);
         }
 
-        Log::info('Performing AI-powered semantic search', ['query' => $query]);
+        Log::info('Performing Elasticsearch search', ['query' => $query, 'limit' => $limit]);
 
         try {
-            // Get or cache query embedding (cache for 1 hour)
-            $embeddingCacheKey = 'embedding:' . md5($query);
-            $queryEmbedding = Cache::remember($embeddingCacheKey, 3600, function () use ($query) {
-                return $this->aiService->embedText($query);
+            // Use Laravel Scout with Elasticsearch for full-text search
+            $results = MediaFile::search($query)
+                ->where('processing_status', 'completed')
+                ->take($limit)
+                ->get();
+
+            // Add search metadata
+            $results->each(function ($model) {
+                $model->similarity = 0.85; // High relevance from Elasticsearch
+                $model->match_type = 'elasticsearch';
+                $model->search_similarity = $model->similarity;
+                $model->search_match_type = $model->match_type;
             });
-            
-            if ($queryEmbedding && is_array($queryEmbedding) && count($queryEmbedding) > 0) {
-                // Use optimized parallel search
-                $searchResults = $this->optimizedSearch($query, $queryEmbedding, $limit);
-            } else {
-                // Fallback to keyword search if embedding generation fails
-                Log::warning('Embedding generation failed, falling back to keyword search');
-                $searchResults = $this->fastKeywordSearch($query, $limit);
-            }
-        } catch (\Exception $e) {
-            Log::error('Semantic search failed, falling back to keyword search', [
-                'error' => $e->getMessage()
+
+            $searchTime = round((microtime(true) - $startTime) * 1000, 2);
+
+            Log::info('Elasticsearch search completed', [
+                'query' => $query,
+                'results' => $results->count(),
+                'search_time_ms' => $searchTime
             ]);
-            $searchResults = $this->fastKeywordSearch($query, $limit);
+
+            return $results;
+        } catch (\Exception $e) {
+            Log::error('Elasticsearch search failed, falling back to database search', [
+                'error' => $e->getMessage(),
+                'query' => $query
+            ]);
+
+            // Fallback to simple database keyword search
+            $results = MediaFile::where('processing_status', 'completed')
+                ->where(function ($q) use ($query) {
+                    $q->where('description', 'ILIKE', '%' . $query . '%')
+                      ->orWhere('detailed_description', 'ILIKE', '%' . $query . '%')
+                      ->orWhere('original_filename', 'ILIKE', '%' . $query . '%');
+                })
+                ->whereNull('deleted_at')
+                ->orderBy('created_at', 'desc')
+                ->limit($limit)
+                ->get();
+
+            // Add search metadata
+            $results->each(function ($model) {
+                $model->similarity = 0.70;
+                $model->match_type = 'keyword';
+                $model->search_similarity = $model->similarity;
+                $model->search_match_type = $model->match_type;
+            });
+
+            $searchTime = round((microtime(true) - $startTime) * 1000, 2);
+
+            Log::info('Fallback search completed', [
+                'query' => $query,
+                'results' => $results->count(),
+                'search_time_ms' => $searchTime
+            ]);
+
+            return $results;
         }
-
-        // Transform results with relevance scores (simplified)
-        $results = $this->fastTransformResults($searchResults, $query)->take($limit);
-
-        // Cache IDs with similarity scores (not full models) for 5 minutes
-        $cacheData = $results->map(function ($result) {
-            return [
-                'id' => $result->id,
-                'similarity' => $result->similarity ?? $result->search_similarity ?? 0.5,
-                'match_type' => $result->match_type ?? $result->search_match_type ?? 'semantic',
-            ];
-        })->toArray();
-        Cache::put($cacheKey, $cacheData, 300);
-
-        $searchTime = round((microtime(true) - $startTime) * 1000, 2);
-
-        Log::info('Search completed', [
-            'query' => $query,
-            'results_count' => $results->count(),
-            'search_time_ms' => $searchTime
-        ]);
-
-        return $results;
     }
 
     /**

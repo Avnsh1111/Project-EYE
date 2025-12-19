@@ -5,7 +5,6 @@ namespace App\Livewire;
 use Livewire\Component;
 use App\Models\MediaFile;
 use App\Repositories\ImageRepository;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class Collections extends Component

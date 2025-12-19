@@ -43,7 +43,7 @@
                             <span class="material-symbols-outlined text-2xl">menu</span>
                         </button>
                         
-                        <a href="{{ route('gallery') }}" class="flex items-center gap-2 text-gray-900 hover:text-primary-600 transition-colors duration-200">
+                        <a wire:navigate href="{{ route('gallery') }}" class="flex items-center gap-2 text-gray-900 hover:text-primary-600 transition-colors duration-200">
                             <div class="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center shadow-md3-1">
                                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -95,7 +95,7 @@
                         </div>
 
                         <!-- Settings -->
-                        <a href="{{ route('settings') }}" 
+                        <a wire:navigate href="{{ route('settings') }}" 
                            class="p-2 text-gray-700 hover:bg-gray-100 rounded-full transition-colors duration-200"
                            title="Settings">
                             <span class="material-symbols-outlined text-2xl">settings</span>
@@ -126,7 +126,7 @@
                                 </div>
 
                                 <div class="py-2">
-                                    <a href="{{ route('settings') }}" 
+                                    <a wire:navigate href="{{ route('settings') }}" 
                                        class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200">
                                         <span class="material-symbols-outlined text-xl">settings</span>
                                         <span>Settings</span>
@@ -168,7 +168,7 @@
 
                     <div class="space-y-1">
                         @foreach ($navItems as $item)
-                            <a href="{{ route($item['route']) }}" 
+                            <a wire:navigate href="{{ route($item['route']) }}" 
                                class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
                                       {{ $currentRoute === $item['route'] 
                                          ? 'bg-primary-50 text-primary-600' 
@@ -186,7 +186,7 @@
                             System
                         </p>
                         @foreach ($systemItems as $item)
-                            <a href="{{ route($item['route']) }}" 
+                            <a wire:navigate href="{{ route($item['route']) }}" 
                                class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
                                       {{ $currentRoute === $item['route'] 
                                          ? 'bg-primary-50 text-primary-600' 

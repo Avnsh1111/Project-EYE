@@ -2,7 +2,6 @@
 
 namespace App\Jobs;
 
-use App\Models\ImageFile;
 use App\Services\NodeImageProcessorService;
 use App\Services\FileService;
 use App\Repositories\ImageRepository;
@@ -13,7 +12,6 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 class ProcessBatchImages implements ShouldQueue
 {

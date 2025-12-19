@@ -33,6 +33,48 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # Elasticsearch for advanced search
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.3
+    container_name: avinash-eye-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - bootstrap.memory_lock=true
+    ports:
+      - "${ELASTICSEARCH_PORT:-9200}:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - avinash-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   # Ollama service for advanced AI capabilities (24/7 reliable)
   ollama:
     image: ollama/ollama:latest
@@ -232,8 +274,12 @@ services:
       - QUEUE_CONNECTION=${QUEUE_CONNECTION:-database}
       - CACHE_DRIVER=${CACHE_DRIVER:-file}
       - SESSION_DRIVER=${SESSION_DRIVER:-file}
+      - SCOUT_DRIVER=elasticsearch
+      - ELASTICSEARCH_HOST=http://elasticsearch:9200
     depends_on:
       db:
+        condition: service_healthy
+      elasticsearch:
         condition: service_healthy
       python-ai:
         condition: service_started
@@ -513,6 +559,8 @@ services:
 
 volumes:
   pgdata:
+    driver: local
+  elasticsearch-data:
     driver: local
   model-cache:
     driver: local

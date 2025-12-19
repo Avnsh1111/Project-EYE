@@ -8,7 +8,6 @@ use App\Services\ImageService;
 use App\Services\SearchService;
 use App\Repositories\ImageRepository;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 class EnhancedImageGallery extends Component
 {

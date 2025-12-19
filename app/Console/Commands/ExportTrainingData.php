@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Models\ImageFile;
-use Illuminate\Support\Facades\Storage;
 
 class ExportTrainingData extends Command
 {

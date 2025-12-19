@@ -2,12 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Models\ImageFile;
 use App\Models\MediaFile;
-use App\Models\DocumentFile;
-use App\Models\VideoFile;
-use App\Models\AudioFile;
-use App\Models\ArchiveFile;
 use App\Models\Setting;
 use App\Services\AiService;
 use App\Services\MetadataService;
@@ -24,7 +19,6 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
 class ProcessImageAnalysis implements ShouldQueue

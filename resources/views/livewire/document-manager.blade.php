@@ -29,7 +29,7 @@
                     </button>
 
                     <!-- Upload Button -->
-                    <a href="{{ route('instant-upload') }}"
+                    <a wire:navigate href="{{ route('instant-upload') }}"
                        class="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg shadow-md3-1 hover:shadow-md3-2 transition-all duration-200">
                         <span class="material-symbols-outlined text-lg">upload</span>
                         <span>Upload</span>
@@ -307,7 +307,7 @@
                 <p class="text-gray-500 mb-8 max-w-md">
                     Upload documents, videos, audio files, and more to get started
                 </p>
-                <a href="{{ route('instant-upload') }}"
+                <a wire:navigate href="{{ route('instant-upload') }}"
                    class="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg shadow-md3-1 hover:shadow-md3-2 transition-all duration-200">
                     <span class="material-symbols-outlined">upload</span>
                     <span>Upload Files</span>

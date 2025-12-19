@@ -71,10 +71,12 @@ return [
      */
     'circuit_breaker' => [
         // Number of consecutive failures before opening circuit
-        'failure_threshold' => env('AI_CIRCUIT_BREAKER_THRESHOLD', 5),
+        // Increased to 10 for better tolerance during model loading
+        'failure_threshold' => env('AI_CIRCUIT_BREAKER_THRESHOLD', 10),
 
-        // Seconds to wait before attempting recovery (60 = 1 minute)
-        'recovery_timeout' => env('AI_CIRCUIT_BREAKER_RECOVERY', 60),
+        // Seconds to wait before attempting recovery (30 = 30 seconds)
+        // Reduced for faster recovery
+        'recovery_timeout' => env('AI_CIRCUIT_BREAKER_RECOVERY', 30),
     ],
 
     /**

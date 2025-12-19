@@ -6,12 +6,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
+use Laravel\Scout\Searchable;
 use Pgvector\Laravel\Vector;
 use Pgvector\Laravel\HasNeighbors;
 
 class MediaFile extends Model
 {
-    use HasFactory, HasNeighbors, SoftDeletes;
+    use HasFactory, HasNeighbors, SoftDeletes, Searchable;
 
     /**
      * The table associated with the model.
@@ -421,5 +422,51 @@ class MediaFile extends Model
             'processing_completed_at' => now(),
             'processing_error' => $error,
         ]);
+    }
+
+    /**
+     * Get the indexable data array for Elasticsearch.
+     *
+     * @return array<string, mixed>
+     */
+    public function toSearchableArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'original_filename' => $this->original_filename ?? '',
+            'description' => $this->description ?? '',
+            'detailed_description' => $this->detailed_description ?? '',
+            'tags' => $this->meta_tags ? (is_array($this->meta_tags) ? implode(', ', $this->meta_tags) : $this->meta_tags) : '',
+            'objects_detected' => $this->objects_detected ? (is_array($this->objects_detected) ? implode(', ', $this->objects_detected) : (string)$this->objects_detected) : '',
+            'scene_classification' => $this->scene_classification ? (is_array($this->scene_classification) ? implode(', ', $this->scene_classification) : (string)$this->scene_classification) : '',
+            'media_type' => $this->media_type ?? '',
+            'mime_type' => $this->mime_type ?? '',
+            'date_taken' => $this->date_taken ? $this->date_taken->toIso8601String() : null,
+            'created_at' => $this->created_at->toIso8601String(),
+            'is_favorite' => (bool)$this->is_favorite,
+        ];
+    }
+
+    /**
+     * Determine if the model should be searchable.
+     *
+     * @return bool
+     */
+    public function shouldBeSearchable(): bool
+    {
+        // Only index completed files with descriptions
+        return $this->processing_status === 'completed' 
+            && !$this->trashed()
+            && !empty($this->description);
+    }
+
+    /**
+     * Get the Scout index name for the model.
+     *
+     * @return string
+     */
+    public function searchableAs(): string
+    {
+        return 'media_files';
     }
 }
