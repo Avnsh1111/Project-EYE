@@ -69,12 +69,14 @@ class CacheService
         $result = Cache::get($key);
 
         if ($result !== null) {
+            Cache::add($this->hitsKey, 0, 86400 * 30);
             Cache::increment($this->hitsKey);
             Log::info('Cache hit for AI analysis', [
                 'file_path' => $filePath,
                 'cache_key' => $key,
             ]);
         } else {
+            Cache::add($this->missesKey, 0, 86400 * 30);
             Cache::increment($this->missesKey);
         }
 

@@ -15,13 +15,13 @@ test('getStats returns hits and misses counters', function () {
 test('getStats increments hits when cache key exists', function () {
     Cache::flush();
     $service = new CacheService();
+    $service->resetStats();
 
-    // Simulate a hit by priming then fetching
     $service->put('/tmp/test.jpg', ['caption' => 'test']);
     $service->get('/tmp/test.jpg');  // hit
 
     $stats = $service->getStats();
-    expect($stats['hits'])->toBeGreaterThanOrEqual(1);
+    expect($stats['hits'])->toBe(1);
 });
 
 test('getStats increments misses when cache key missing', function () {
