@@ -111,6 +111,12 @@ class MediaFile extends Model
         'upload_started_at',
         'upload_completed_at',
         'processing_stage',
+        // Archive fields
+        'compression_type',
+        'uncompressed_size',
+        'file_count',
+        'file_list',
+        'is_encrypted',
     ];
 
     /**
