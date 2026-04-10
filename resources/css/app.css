@@ -411,3 +411,12 @@
         @apply bg-gray-900 text-white;
     }
 }
+
+/* Hide scrollbar for memories strip */
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}

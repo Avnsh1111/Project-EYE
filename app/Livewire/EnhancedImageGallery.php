@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use Livewire\Component;
+use Livewire\Attributes\Computed;
 use App\Models\MediaFile;
 use App\Services\ImageService;
 use App\Services\SearchService;
@@ -575,6 +576,28 @@ class EnhancedImageGallery extends Component
         $this->dispatch('media-updated', id: $mediaId);
         $this->loadImages();
         $this->loadStats();
+    }
+
+    #[Computed]
+    public function memories(): \Illuminate\Support\Collection
+    {
+        return MediaFile::query()
+            ->where('media_type', 'image')
+            ->whereNull('trashed_at')
+            ->whereNotNull('taken_at')
+            ->where('taken_at', '>=', now()->subYears(2))
+            ->selectRaw("DATE_TRUNC('month', taken_at) as month, COUNT(*) as count, MIN(id) as cover_id")
+            ->groupByRaw("DATE_TRUNC('month', taken_at)")
+            ->orderByDesc('month')
+            ->limit(8)
+            ->get()
+            ->map(function ($row) {
+                return [
+                    'label'    => \Carbon\Carbon::parse($row->month)->format('M Y'),
+                    'count'    => $row->count,
+                    'cover_id' => $row->cover_id,
+                ];
+            });
     }
 
     public function render()
