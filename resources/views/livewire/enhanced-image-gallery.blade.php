@@ -210,7 +210,7 @@ class="min-h-screen bg-white">
     <!-- Main Content -->
     <div class="max-w-[2000px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {{-- Memories strip --}}
-        @if($this->memories->isNotEmpty())
+        @if($this->memories->isNotEmpty() && !$showTrash && !$showFavorites && empty($searchQuery))
         <div class="mb-6">
             <div class="flex items-center justify-between mb-3">
                 <h2 class="text-base font-semibold text-gray-800">Memories</h2>

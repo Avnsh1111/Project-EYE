@@ -578,7 +578,7 @@ class EnhancedImageGallery extends Component
         $this->loadStats();
     }
 
-    #[Computed]
+    #[Computed(persist: true)]
     public function memories(): \Illuminate\Support\Collection
     {
         return MediaFile::query()
