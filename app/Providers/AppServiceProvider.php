@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Events\ImageProcessed;
+use App\Listeners\ImageProcessedListener;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Scout\EngineManager;
 use Elasticsearch\ClientBuilder as ElasticsearchBuilder;
@@ -22,6 +25,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Register ImageProcessed event listener
+        Event::listen(ImageProcessed::class, ImageProcessedListener::class);
+
         // Register MediaFile observer for automatic folder organization
         \App\Models\MediaFile::observe(\App\Observers\MediaFileObserver::class);
 
