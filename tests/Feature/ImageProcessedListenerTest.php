@@ -1,5 +1,7 @@
 <?php
 
+uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
+
 use App\Events\ImageProcessed;
 use App\Listeners\ImageProcessedListener;
 use App\Models\MediaFile;
