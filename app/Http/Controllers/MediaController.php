@@ -61,7 +61,7 @@ class MediaController extends Controller
 
             // Clamp end to last byte and reject unsatisfiable start
             $end = min($end, $size - 1);
-            if ($start >= $size) {
+            if ($start >= $size || $start > $end) {
                 abort(response('Range Not Satisfiable', 416, [
                     'Content-Range' => "bytes */{$size}",
                 ]));
