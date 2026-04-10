@@ -68,6 +68,8 @@ class ImageService
             'has_gps' => $image->gps_latitude && $image->gps_longitude,
             // Status
             'is_trashed' => $image->trashed(),
+            'starred_at' => $image->starred_at,
+            'trashed_at' => $image->trashed_at,
         ];
     }
 
@@ -299,6 +301,7 @@ class ImageService
             $query->onlyTrashed();
         } else {
             $query->whereNull('deleted_at');
+            $query->notTrashed();
         }
         
         if ($filters['showFavorites'] ?? false) {

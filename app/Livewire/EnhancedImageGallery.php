@@ -544,6 +544,33 @@ class EnhancedImageGallery extends Component
         }
     }
 
+    public function toggleStar(int $mediaId): void
+    {
+        $media = MediaFile::findOrFail($mediaId);
+
+        if ($media->starred_at) {
+            $media->update(['starred_at' => null]);
+        } else {
+            $media->update(['starred_at' => now()]);
+        }
+
+        $this->dispatch('media-updated', id: $mediaId);
+    }
+
+    public function trashMedia(int $mediaId): void
+    {
+        $media = MediaFile::findOrFail($mediaId);
+        $media->update(['trashed_at' => now()]);
+        $this->dispatch('media-updated', id: $mediaId);
+    }
+
+    public function restoreMedia(int $mediaId): void
+    {
+        $media = MediaFile::findOrFail($mediaId);
+        $media->update(['trashed_at' => null]);
+        $this->dispatch('media-updated', id: $mediaId);
+    }
+
     public function render()
     {
         return view('livewire.enhanced-image-gallery')

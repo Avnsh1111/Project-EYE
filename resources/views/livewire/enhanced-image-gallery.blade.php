@@ -299,6 +299,29 @@ class="min-h-screen bg-white">
                                 </span>
                             </div>
                         @endif
+
+                        {{-- Star/Trash action overlay --}}
+                        @if (!$selectionMode)
+                        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 rounded-md pointer-events-none">
+                            <div class="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto">
+                                {{-- Star button --}}
+                                <button wire:click.stop="toggleStar({{ $file['id'] }})"
+                                        class="w-7 h-7 rounded-full bg-black/50 flex items-center justify-center hover:bg-black/70 transition-colors"
+                                        title="{{ $file['starred_at'] ? 'Unstar' : 'Star' }}">
+                                    <span class="material-symbols-outlined text-sm {{ $file['starred_at'] ? 'text-yellow-400' : 'text-white' }}">
+                                        {{ $file['starred_at'] ? 'star' : 'star_border' }}
+                                    </span>
+                                </button>
+                                {{-- Trash button --}}
+                                <button wire:click.stop="trashMedia({{ $file['id'] }})"
+                                        wire:confirm="Move this item to trash?"
+                                        class="w-7 h-7 rounded-full bg-black/50 flex items-center justify-center hover:bg-red-600/80 transition-colors"
+                                        title="Move to trash">
+                                    <span class="material-symbols-outlined text-sm text-white">delete</span>
+                                </button>
+                            </div>
+                        </div>
+                        @endif
                     </div>
                 @endforeach
             </div>
