@@ -152,6 +152,8 @@ class MediaFile extends Model
         'upload_started_at' => 'datetime',
         'upload_completed_at' => 'datetime',
         'upload_progress' => 'integer',
+        'starred_at' => 'datetime',
+        'trashed_at' => 'datetime',
     ];
 
     /**
@@ -367,6 +369,39 @@ class MediaFile extends Model
     public function scopeInAlbum($query, string $album)
     {
         return $query->where('album', $album);
+    }
+
+    /**
+     * Scope to get starred media files.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeStarred($query)
+    {
+        return $query->whereNotNull('starred_at');
+    }
+
+    /**
+     * Scope to exclude soft-trashed (trashed_at) media files.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeNotTrashed($query)
+    {
+        return $query->whereNull('trashed_at');
+    }
+
+    /**
+     * Scope to get only trashed (trashed_at) media files.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeTrashed($query)
+    {
+        return $query->whereNotNull('trashed_at');
     }
 
     /**
