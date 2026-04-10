@@ -54,7 +54,17 @@ class MediaController extends Controller
                 $end   = $matches[2] !== '' ? intval($matches[2]) : $size - 1;
             }
             else {
-                abort(416, 'Range Not Satisfiable');
+                abort(response('Range Not Satisfiable', 416, [
+                    'Content-Range' => "bytes */{$size}",
+                ]));
+            }
+
+            // Clamp end to last byte and reject unsatisfiable start
+            $end = min($end, $size - 1);
+            if ($start >= $size) {
+                abort(response('Range Not Satisfiable', 416, [
+                    'Content-Range' => "bytes */{$size}",
+                ]));
             }
 
             $length = $end - $start + 1;
