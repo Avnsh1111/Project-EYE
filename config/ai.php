@@ -14,6 +14,8 @@ return [
 
     'api_url' => env('AI_API_URL', 'http://python-ai:8000'),
 
+    'ollama_url' => env('OLLAMA_URL', 'http://ollama:11434'),
+
     'timeout' => env('AI_TIMEOUT', 120), // Legacy fallback
 
     /**
