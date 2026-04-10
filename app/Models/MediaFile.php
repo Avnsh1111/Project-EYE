@@ -117,6 +117,9 @@ class MediaFile extends Model
         'file_count',
         'file_list',
         'is_encrypted',
+        // Star / trash state
+        'starred_at',
+        'trashed_at',
     ];
 
     /**

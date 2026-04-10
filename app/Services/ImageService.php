@@ -298,9 +298,8 @@ class ImageService
         
         // Apply filters
         if ($filters['showTrash'] ?? false) {
-            $query->onlyTrashed();
+            $query->whereNotNull('trashed_at');
         } else {
-            $query->whereNull('deleted_at');
             $query->notTrashed();
         }
         

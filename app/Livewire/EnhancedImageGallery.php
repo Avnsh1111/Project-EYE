@@ -555,6 +555,8 @@ class EnhancedImageGallery extends Component
         }
 
         $this->dispatch('media-updated', id: $mediaId);
+        $this->loadImages();
+        $this->loadStats();
     }
 
     public function trashMedia(int $mediaId): void
@@ -562,6 +564,8 @@ class EnhancedImageGallery extends Component
         $media = MediaFile::findOrFail($mediaId);
         $media->update(['trashed_at' => now()]);
         $this->dispatch('media-updated', id: $mediaId);
+        $this->loadImages();
+        $this->loadStats();
     }
 
     public function restoreMedia(int $mediaId): void
@@ -569,6 +573,8 @@ class EnhancedImageGallery extends Component
         $media = MediaFile::findOrFail($mediaId);
         $media->update(['trashed_at' => null]);
         $this->dispatch('media-updated', id: $mediaId);
+        $this->loadImages();
+        $this->loadStats();
     }
 
     public function render()
