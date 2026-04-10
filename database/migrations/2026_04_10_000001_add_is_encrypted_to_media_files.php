@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('media_files', function (Blueprint $table) {
-            $table->boolean('is_encrypted')->default(false)->after('file_list');
+            $table->boolean('is_encrypted')->default(false);
         });
     }
 

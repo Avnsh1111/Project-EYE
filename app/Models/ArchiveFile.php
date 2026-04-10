@@ -124,7 +124,7 @@ class ArchiveFile extends MediaFile
      */
     public function hasPassword(): bool
     {
-        return (bool) $this->is_encrypted;
+        return $this->is_encrypted ?? false;
     }
 
     /**
