@@ -25,6 +25,16 @@ class CacheService
     protected string $prefix = 'ai_analysis';
 
     /**
+     * Cache key for tracking hit counter.
+     */
+    protected string $hitsKey = 'cache_stats:hits';
+
+    /**
+     * Cache key for tracking miss counter.
+     */
+    protected string $missesKey = 'cache_stats:misses';
+
+    /**
      * Generate cache key for a file's AI analysis result.
      *
      * @param string $filePath Full or relative path to the file
@@ -56,16 +66,19 @@ class CacheService
     {
         $key = $this->generateKey($filePath);
 
-        $cached = Cache::get($key);
+        $result = Cache::get($key);
 
-        if ($cached !== null) {
+        if ($result !== null) {
+            Cache::increment($this->hitsKey);
             Log::info('Cache hit for AI analysis', [
                 'file_path' => $filePath,
                 'cache_key' => $key,
             ]);
+        } else {
+            Cache::increment($this->missesKey);
         }
 
-        return $cached;
+        return $result;
     }
 
     /**
@@ -141,18 +154,34 @@ class CacheService
     }
 
     /**
+     * Reset hit/miss counters to zero.
+     *
+     * @return void
+     */
+    public function resetStats(): void
+    {
+        Cache::put($this->hitsKey, 0, 86400 * 30);
+        Cache::put($this->missesKey, 0, 86400 * 30);
+    }
+
+    /**
      * Get cache statistics for monitoring.
      *
      * @return array Cache hit/miss statistics
      */
     public function getStats(): array
     {
-        // This would require implementing cache hit/miss tracking
-        // For now, return placeholder structure
+        $hits   = (int) Cache::get($this->hitsKey, 0);
+        $misses = (int) Cache::get($this->missesKey, 0);
+        $total  = $hits + $misses;
+
         return [
-            'prefix' => $this->prefix,
+            'prefix'      => $this->prefix,
             'default_ttl' => $this->defaultTtl,
-            'store' => config('cache.default'),
+            'store'       => config('cache.default'),
+            'hits'        => $hits,
+            'misses'      => $misses,
+            'hit_rate'    => $total > 0 ? round(($hits / $total) * 100, 1) : 0.0,
         ];
     }
 
