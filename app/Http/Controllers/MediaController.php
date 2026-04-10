@@ -45,6 +45,12 @@ class MediaController extends Controller
         if ($range) {
             // Parse range header (e.g., "bytes=0-1023")
             preg_match('/bytes=(\d+)-(\d*)/', $range, $matches);
+
+            // Guard: reject malformed Range headers
+            if (empty($matches)) {
+                abort(416, 'Range Not Satisfiable');
+            }
+
             $start = intval($matches[1]);
             $end = $matches[2] ? intval($matches[2]) : $size - 1;
             $length = $end - $start + 1;
