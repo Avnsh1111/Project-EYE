@@ -43,3 +43,4 @@ Thumbs.db
 test_database.sql
 test_image.svg
 organyz/
+.worktrees/
