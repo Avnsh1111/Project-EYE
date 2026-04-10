@@ -300,7 +300,7 @@ class ProcessImageAnalysis implements ShouldQueue
                     $prompt = "Based on these sequential video frame descriptions from a {$duration} second video, write a coherent 2-3 sentence summary describing what happens in the video:\n\n- {$sceneContext}\n\nSummary:";
 
                     $ollamaModel = Setting::get('ollama_model', 'llava');
-                    $response = Http::timeout(90)->post(config('ai.ollama_url', 'http://ollama:11434') . '/api/generate', [
+                    $response = Http::timeout(90)->post(config('ai.ollama_url') . '/api/generate', [
                         'model' => $ollamaModel,
                         'prompt' => $prompt,
                         'stream' => false,

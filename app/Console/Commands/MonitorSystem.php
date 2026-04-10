@@ -50,7 +50,7 @@ class MonitorSystem extends Command
         
         // Check Ollama Service
         try {
-            $response = Http::timeout(5)->get(config('ai.ollama_url', 'http://ollama:11434') . '/api/tags');
+            $response = Http::timeout(5)->get(config('ai.ollama_url') . '/api/tags');
             if ($response->successful()) {
                 $models = $response->json()['models'] ?? [];
                 $this->info('✅ Ollama Service: Healthy (' . count($models) . ' models)');
