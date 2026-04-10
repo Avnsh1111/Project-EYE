@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Setting;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -49,13 +50,13 @@ class MonitorSystem extends Command
         
         // Check Ollama Service
         try {
-            $response = Http::timeout(5)->get(config('ollama.url', 'http://ollama:11434') . '/api/tags');
+            $response = Http::timeout(5)->get(config('ai.ollama_url', 'http://ollama:11434') . '/api/tags');
             if ($response->successful()) {
                 $models = $response->json()['models'] ?? [];
                 $this->info('✅ Ollama Service: Healthy (' . count($models) . ' models)');
                 
                 // Check if required model is present
-                $requiredModel = config('ollama.model', 'llava');
+                $requiredModel = Setting::get('ollama_model', 'llava');
                 $hasModel = collect($models)->contains(function ($model) use ($requiredModel) {
                     return str_contains($model['name'], $requiredModel);
                 });
