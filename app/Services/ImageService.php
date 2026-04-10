@@ -276,7 +276,7 @@ class ImageService
         return [
             'total' => MediaFile::count(),
             'favorites' => MediaFile::where('is_favorite', true)->count(),
-            'trashed' => MediaFile::onlyTrashed()->count(),
+            'trashed' => MediaFile::whereNotNull('trashed_at')->count(),
             'completed' => MediaFile::where('processing_status', 'completed')->count(),
             'pending' => MediaFile::where('processing_status', 'pending')->count(),
             'processing' => MediaFile::where('processing_status', 'processing')->count(),
