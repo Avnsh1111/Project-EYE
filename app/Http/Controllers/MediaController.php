@@ -43,16 +43,20 @@ class MediaController extends Controller
         $range = $request->header('Range');
 
         if ($range) {
-            // Parse range header (e.g., "bytes=0-1023")
-            preg_match('/bytes=(\d+)-(\d*)/', $range, $matches);
-
-            // Guard: reject malformed Range headers
-            if (empty($matches)) {
+            // Try suffix-range: bytes=-N (last N bytes) per RFC 7233
+            if (preg_match('/^bytes=-(\d+)$/', $range, $suffixMatch)) {
+                $start = max(0, $size - intval($suffixMatch[1]));
+                $end   = $size - 1;
+            }
+            // Try standard range: bytes=N-M or bytes=N-
+            elseif (preg_match('/^bytes=(\d+)-(\d*)$/', $range, $matches)) {
+                $start = intval($matches[1]);
+                $end   = $matches[2] !== '' ? intval($matches[2]) : $size - 1;
+            }
+            else {
                 abort(416, 'Range Not Satisfiable');
             }
 
-            $start = intval($matches[1]);
-            $end = $matches[2] ? intval($matches[2]) : $size - 1;
             $length = $end - $start + 1;
 
             return response()->stream(function () use ($path, $start, $length) {
