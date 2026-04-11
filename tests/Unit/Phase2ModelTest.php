@@ -39,4 +39,5 @@ test('User model has storageQuota, shareLinks, families relationships', function
     expect($user->storageQuota())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\HasOne::class);
     expect($user->shareLinks())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\HasMany::class);
     expect($user->families())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsToMany::class);
+    expect($user->ownedFamilies())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\HasMany::class);
 });

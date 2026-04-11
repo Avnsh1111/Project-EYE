@@ -239,9 +239,12 @@ class MediaFile extends Model
         // Convert array to pgvector format
         $vectorString = '[' . implode(',', $queryEmbedding) . ']';
 
+        // Get the authenticated user id for scoping results
+        $userId = auth()->id();
+
         // Build media type filter with proper parameter binding
         $mediaTypeFilter = '';
-        $bindings = [$vectorString, $vectorString, $minSimilarity, $vectorString, $limit];
+        $bindings = [$vectorString, $vectorString, $minSimilarity, $userId, $userId, $vectorString, $limit];
 
         if ($mediaTypes !== null && count($mediaTypes) > 0) {
             // Create placeholders for IN clause
@@ -272,6 +275,7 @@ class MediaFile extends Model
             WHERE embedding IS NOT NULL
               AND deleted_at IS NULL
               AND (1 - (embedding <=> ?::vector)) >= ?
+              AND (? IS NULL OR media_files.user_id = ?)
               AND processing_status = 'completed'
               $mediaTypeFilter
             ORDER BY embedding <=> ?::vector
