@@ -122,6 +122,8 @@ class MediaFile extends Model
         // Star / trash state
         'starred_at',
         'trashed_at',
+        // Deduplication
+        'file_hash',
     ];
 
     /**
