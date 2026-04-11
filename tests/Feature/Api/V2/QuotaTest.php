@@ -50,3 +50,14 @@ test('increment and decrement update used_bytes correctly', function () {
     $quota->refresh();
     expect($quota->used_bytes)->toBe(600);
 });
+
+test('decrement floors at zero and does not go negative', function () {
+    $user  = User::factory()->create();
+    $quota = StorageQuota::create(['user_id' => $user->id, 'quota_bytes' => 1000, 'used_bytes' => 100]);
+
+    $service = new QuotaService();
+    $service->decrement($user, 9999); // far exceeds current value
+    $quota->refresh();
+
+    expect($quota->used_bytes)->toBe(0);
+});

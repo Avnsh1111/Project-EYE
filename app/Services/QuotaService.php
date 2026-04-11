@@ -39,8 +39,8 @@ class QuotaService
     public function decrement(User $user, int $bytes): void
     {
         $quota = $this->getOrCreateQuota($user);
-        $newValue = max(0, $quota->used_bytes - $bytes);
-        $quota->update(['used_bytes' => $newValue]);
+        StorageQuota::where('id', $quota->id)
+            ->update(['used_bytes' => \Illuminate\Support\Facades\DB::raw('GREATEST(0, used_bytes - ' . (int) $bytes . ')')]);
     }
 
     private function getOrCreateQuota(User $user): StorageQuota
