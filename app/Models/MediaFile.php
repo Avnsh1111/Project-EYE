@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 use Laravel\Scout\Searchable;
@@ -32,6 +33,7 @@ class MediaFile extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'user_id',
         'media_type',
         'batch_id',
         'file_path',
@@ -185,6 +187,21 @@ class MediaFile extends Model
             $mediaType = $instance->getMediaType();
             $builder->where('media_type', $mediaType);
         });
+
+        // Filter media files by the authenticated user
+        static::addGlobalScope('user_scope', function ($query) {
+            if (auth()->check()) {
+                $query->where('media_files.user_id', auth()->id());
+            }
+        });
+    }
+
+    /**
+     * Get the user that owns the media file.
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     /**
