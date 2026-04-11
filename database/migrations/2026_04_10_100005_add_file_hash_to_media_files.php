@@ -16,7 +16,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('media_files', function (Blueprint $table) {
-            $table->dropIndex(['file_hash']);
+            $table->dropIndex('media_files_file_hash_index');
             $table->dropColumn('file_hash');
         });
     }
