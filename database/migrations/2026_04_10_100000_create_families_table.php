@@ -20,7 +20,6 @@ return new class extends Migration
 
         // Pivot: family_user
         Schema::create('family_user', function (Blueprint $table) {
-            $table->id();
             $table->unsignedBigInteger('family_id');
             $table->unsignedBigInteger('user_id');
             $table->string('role')->default('member'); // 'owner' | 'member'
@@ -28,7 +27,7 @@ return new class extends Migration
 
             $table->foreign('family_id')->references('id')->on('families')->onDelete('cascade');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            $table->unique(['family_id', 'user_id']);
+            $table->primary(['family_id', 'user_id']);
         });
     }
 

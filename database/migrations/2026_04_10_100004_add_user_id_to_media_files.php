@@ -15,12 +15,19 @@ return new class extends Migration
             $table->index('user_id');
         });
 
-        // Step 2: backfill existing rows to the first admin user (id = 1)
-        DB::statement('UPDATE media_files SET user_id = (SELECT id FROM users ORDER BY id ASC LIMIT 1) WHERE user_id IS NULL');
+        // Step 2: backfill existing rows to the first user (safe: skipped if no users)
+        $firstUserId = DB::table('users')->orderBy('id')->value('id');
+        if ($firstUserId !== null) {
+            DB::statement('UPDATE media_files SET user_id = ? WHERE user_id IS NULL', [$firstUserId]);
+        }
 
-        // Step 3: make it NOT NULL
+        // Step 3a: make NOT NULL
         Schema::table('media_files', function (Blueprint $table) {
             $table->unsignedBigInteger('user_id')->nullable(false)->change();
+        });
+
+        // Step 3b: add FK separately
+        Schema::table('media_files', function (Blueprint $table) {
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
@@ -29,6 +36,7 @@ return new class extends Migration
     {
         Schema::table('media_files', function (Blueprint $table) {
             $table->dropForeign(['user_id']);
+            $table->dropIndex(['user_id']);
             $table->dropColumn('user_id');
         });
     }
