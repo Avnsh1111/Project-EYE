@@ -26,7 +26,13 @@ test('appendChunk stores data and returns bytes received', function () {
     $result = $service->appendChunk($init['upload_id'], 0, 'hello world');
 
     expect($result)->toHaveKey('received');
-    expect($result['received'])->toBe(11); // strlen('hello world')
+    expect($result['received'])->toBe(11); // ftell position after writing 11 bytes at offset 0
+
+    // Verify the chunk was actually written to the temp file on disk
+    $tempPath = Storage::disk('local')->path("resumable_uploads/{$init['upload_id']}.tmp");
+    expect(file_exists($tempPath))->toBeTrue();
+    expect(filesize($tempPath))->toBe(11);
+    expect(file_get_contents($tempPath))->toBe('hello world');
 });
 
 test('finalise assembles chunks and creates MediaFile', function () {
@@ -48,4 +54,10 @@ test('finalise assembles chunks and creates MediaFile', function () {
     expect($mediaFile->original_filename)->toBe('photo.jpg');
     expect($mediaFile->user_id)->toBe($user->id);
     expect($mediaFile->processing_status)->toBe('pending');
+    expect($mediaFile->file_size)->toBe(100);
+
+    // Verify the assembled file on disk has the correct content
+    $destPath = Storage::disk('local')->path($mediaFile->file_path);
+    expect(file_exists($destPath))->toBeTrue();
+    expect(file_get_contents($destPath))->toBe($content);
 });

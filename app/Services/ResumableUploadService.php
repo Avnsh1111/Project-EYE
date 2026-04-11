@@ -50,15 +50,22 @@ class ResumableUploadService
         }
 
         $fh = fopen($fullPath, 'c+b');
+        if ($fh === false) {
+            throw new \RuntimeException("Cannot open temp file for writing: {$fullPath}");
+        }
         fseek($fh, $offset);
-        fwrite($fh, $data);
+        $written = fwrite($fh, $data);
+        if ($written === false) {
+            fclose($fh);
+            throw new \RuntimeException("Failed to write chunk to temp file: {$fullPath}");
+        }
+        $received = ftell($fh);
         fclose($fh);
 
-        $bytesWritten       = strlen($data);
-        $meta['received']  += $bytesWritten;
+        $meta['received']  = $received;
         Cache::put("upload:{$uploadId}", $meta, self::UPLOAD_TTL);
 
-        return ['received' => $bytesWritten];
+        return ['received' => $received];
     }
 
     public function finalise(string $uploadId, User $user): MediaFile
@@ -86,15 +93,20 @@ class ResumableUploadService
         $mimeType = mime_content_type($destFullPath) ?: 'application/octet-stream';
         $mediaType = $this->detectMediaType($mimeType);
 
-        $mediaFile = MediaFile::withoutGlobalScopes()->create([
-            'user_id'           => $user->id,
-            'original_filename' => $filename,
-            'file_path'         => $storagePath,
-            'media_type'        => $mediaType,
-            'mime_type'         => $mimeType,
-            'file_size'         => $fileSize,
-            'processing_status' => 'pending',
-        ]);
+        try {
+            $mediaFile = MediaFile::withoutGlobalScopes()->create([
+                'user_id'           => $user->id,
+                'original_filename' => $filename,
+                'file_path'         => $storagePath,
+                'media_type'        => $mediaType,
+                'mime_type'         => $mimeType,
+                'file_size'         => $fileSize,
+                'processing_status' => 'pending',
+            ]);
+        } catch (\Throwable $e) {
+            @unlink($destFullPath);
+            throw $e;
+        }
 
         Cache::forget("upload:{$uploadId}");
 
