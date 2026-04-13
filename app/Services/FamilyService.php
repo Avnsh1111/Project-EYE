@@ -47,6 +47,11 @@ class FamilyService
             throw new RuntimeException('Family owner cannot leave. Transfer ownership or delete the family.');
         }
 
+        $isMember = $family->members()->where('user_id', $user->id)->exists();
+        if (!$isMember) {
+            throw new RuntimeException('You are not a member of this family.');
+        }
+
         $family->members()->detach($user->id);
     }
 }

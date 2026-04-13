@@ -27,13 +27,21 @@ class FamilyController extends Controller
     public function join(Request $request, int $id)
     {
         $request->validate(['invite_code' => 'required|string']);
-        $family = $this->familyService->join($request->user(), $id, $request->invite_code);
-        return response()->json($family);
+        try {
+            $family = $this->familyService->join($request->user(), $id, $request->invite_code);
+            return response()->json($family);
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
     }
 
     public function leave(Request $request, int $id)
     {
-        $this->familyService->leave($request->user(), $id);
-        return response()->json(['message' => 'Left family']);
+        try {
+            $this->familyService->leave($request->user(), $id);
+            return response()->json(['message' => 'Left family']);
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
     }
 }

@@ -24,14 +24,6 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'is_active',
-        'login_attempts',
-        'locked_until',
-        'last_login_at',
-        'last_login_ip',
-        'two_factor_secret',
-        'two_factor_enabled',
-        'password_changed_at',
     ];
 
     /**

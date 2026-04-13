@@ -12,6 +12,17 @@ describe('Multi-user isolation', function () {
         $userA = User::factory()->create();
         $userB = User::factory()->create();
 
+        // Create media for user A
+        $userAMediaId = DB::table('media_files')->insertGetId([
+            'user_id' => $userA->id,
+            'original_filename' => 'mine.jpg',
+            'file_path' => 'media/mine.jpg',
+            'media_type' => 'image',
+            'file_size' => 500,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
         // Create media for user B using DB::table to bypass global scope
         $mediaId = DB::table('media_files')->insertGetId([
             'user_id' => $userB->id,
@@ -28,6 +39,8 @@ describe('Multi-user isolation', function () {
 
         $response->assertOk();
         $ids = collect($response->json('data'))->pluck('id')->toArray();
+        // Assert userA sees their own but not userB's
+        expect($ids)->toContain($userAMediaId);
         expect($ids)->not->toContain($mediaId);
     });
 

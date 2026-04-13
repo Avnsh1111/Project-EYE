@@ -9,7 +9,8 @@ use Illuminate\Support\Facades\Route;
 
 // Public routes
 Route::post('/auth/login', [AuthController::class, 'login']);
-Route::post('/auth/register', [AuthController::class, 'register']);
+Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:5,1');
+Route::get('/share-links/{token}', [ShareLinkController::class, 'show']);
 
 // Authenticated routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -27,7 +28,6 @@ Route::middleware('auth:sanctum')->group(function () {
     // Share links
     Route::post('/share-links', [ShareLinkController::class, 'store']);
     Route::delete('/share-links/{token}', [ShareLinkController::class, 'destroy']);
-    Route::get('/share-links/{token}', [ShareLinkController::class, 'show']);
 
     // Families
     Route::get('/families', [FamilyController::class, 'index']);

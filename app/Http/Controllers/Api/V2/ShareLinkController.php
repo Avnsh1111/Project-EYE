@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\ShareLinkService;
 use App\Exceptions\ShareLinkException;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ShareLinkController extends Controller
 {
@@ -14,7 +15,10 @@ class ShareLinkController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'media_file_id' => 'required|integer|exists:media_files,id',
+            'media_file_id' => [
+                'required', 'integer',
+                Rule::exists('media_files', 'id')->where('user_id', $request->user()->id),
+            ],
             'expires_at' => 'nullable|date|after:now',
             'password' => 'nullable|string|min:4',
             'max_views' => 'nullable|integer|min:1',
