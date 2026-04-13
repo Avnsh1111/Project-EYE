@@ -29,7 +29,7 @@ class MediaController extends Controller
     public function destroy(Request $request, int $id)
     {
         $media = MediaFile::where('user_id', $request->user()->id)->findOrFail($id);
-        $media->delete();
-        return response()->json(['message' => 'Media deleted']);
+        $media->update(['trashed_at' => now()]);
+        return response()->json(['message' => 'Media moved to trash']);
     }
 }

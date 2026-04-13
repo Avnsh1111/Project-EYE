@@ -51,7 +51,15 @@ class ShareLinkController extends Controller
             $link = $this->shareLinkService->validate($token, $request->query('password'));
             return response()->json(['media_file_id' => $link->media_file_id]);
         } catch (ShareLinkException $e) {
-            return response()->json(['message' => $e->getMessage()], 403);
+            $msg = $e->getMessage();
+            if (str_contains($msg, 'not found') || str_contains($msg, 'inactive') || str_contains($msg, 'not active')) {
+                $status = 404;
+            } elseif (str_contains($msg, 'expired') || str_contains($msg, 'limit reached') || str_contains($msg, 'view limit')) {
+                $status = 410;
+            } else {
+                $status = 403;
+            }
+            return response()->json(['message' => $msg], $status);
         }
     }
 }
