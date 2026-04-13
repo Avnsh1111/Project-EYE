@@ -16,16 +16,26 @@ class ShareLinkService
             $passwordHash = Hash::make($params['password']);
         }
 
-        return ShareLink::create([
-            'user_id'       => $params['user_id'],
-            'media_file_id' => $params['media_file_id'],
-            'token'         => Str::random(64),
-            'password_hash' => $passwordHash,
-            'expires_at'    => $params['expires_at'] ?? null,
-            'max_views'     => $params['max_views'] ?? null,
-            'view_count'    => 0,
-            'is_active'     => true,
-        ]);
+        try {
+            $shareLink = ShareLink::create([
+                'user_id'       => $params['user_id'],
+                'media_file_id' => $params['media_file_id'],
+                'token'         => Str::random(64),
+                'password_hash' => $passwordHash,
+                'expires_at'    => $params['expires_at'] ?? null,
+                'max_views'     => $params['max_views'] ?? null,
+                'view_count'    => 0,
+                'is_active'     => true,
+            ]);
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Postgres unique violation SQLSTATE 23505 / generic duplicate entry
+            if (str_contains($e->getMessage(), '23505') || str_contains($e->getMessage(), 'Duplicate entry') || str_contains($e->getMessage(), 'UNIQUE constraint')) {
+                throw new \App\Exceptions\ShareLinkException('Token collision occurred. Please retry.');
+            }
+            throw $e;
+        }
+
+        return $shareLink;
     }
 
     public function validate(string $token, ?string $password): ShareLink

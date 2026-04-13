@@ -116,6 +116,7 @@ describe('ShareLinkService', function () {
 
         expect(fn () => $service->validate($link->token, null))
             ->toThrow(\App\Exceptions\ShareLinkException::class);
+        expect(ShareLink::find($link->id)->is_active)->toBeFalse();
     });
 
     it('prevents revoking another user\'s share link', function () {
