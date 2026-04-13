@@ -59,13 +59,12 @@ class ResumableUploadService
             fclose($fh);
             throw new \RuntimeException("Failed to write chunk to temp file: {$fullPath}");
         }
-        $received = ftell($fh);
         fclose($fh);
 
-        $meta['received']  = $received;
+        $meta['received'] = max($meta['received'] ?? 0, $offset + strlen($data));
         Cache::put("upload:{$uploadId}", $meta, self::UPLOAD_TTL);
 
-        return ['received' => $received];
+        return ['received' => $meta['received']];
     }
 
     public function finalise(string $uploadId): MediaFile
@@ -113,9 +112,9 @@ class ResumableUploadService
             throw $e;
         }
 
-        Cache::forget("upload:{$uploadId}");
-
         \App\Jobs\ProcessImageAnalysis::dispatch($mediaFile->id);
+
+        Cache::forget("upload:{$uploadId}");
 
         return $mediaFile;
     }
