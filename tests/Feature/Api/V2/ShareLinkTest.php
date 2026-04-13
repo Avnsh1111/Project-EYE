@@ -49,6 +49,7 @@ test('validate returns the share link for a valid token', function () {
 
     $found = $service->validate($link->token, null);
     expect($found->id)->toBe($link->id);
+    expect(ShareLink::find($link->id)->view_count)->toBe(1);
 });
 
 test('validate throws for expired link', function () {
@@ -130,7 +131,8 @@ it('prevents revoking another user\'s share link', function () {
 
     $service = app(ShareLinkService::class);
 
-    $service->revoke($link->token, $attacker->id);
+    expect(fn () => $service->revoke($link->token, $attacker->id))
+        ->toThrow(ShareLinkException::class);
 
     expect(ShareLink::find($link->id)->is_active)->toBeTrue();
 });

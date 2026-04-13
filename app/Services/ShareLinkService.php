@@ -61,8 +61,12 @@ class ShareLinkService
 
     public function revoke(string $token, int $userId): void
     {
-        ShareLink::where('token', $token)
+        $affected = ShareLink::where('token', $token)
             ->where('user_id', $userId)
             ->update(['is_active' => false]);
+
+        if ($affected === 0) {
+            throw new ShareLinkException('Share link not found or does not belong to this user.');
+        }
     }
 }
