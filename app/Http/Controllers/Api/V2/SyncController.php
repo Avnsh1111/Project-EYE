@@ -20,8 +20,9 @@ class SyncController extends Controller
             'since' => 'required|date',
         ]);
 
-        $since = \Carbon\Carbon::parse($request->query('since'));
+        $since = \Carbon\Carbon::parse($request->input('since'));
 
+        $limit = min((int) $request->input('limit', 200), 500);
         $media = MediaFile::withoutGlobalScope(SoftDeletingScope::class)
             ->where('user_id', $request->user()->id)
             ->where(function ($query) use ($since) {
@@ -29,12 +30,19 @@ class SyncController extends Controller
                       ->orWhere('updated_at', '>', $since);
             })
             ->orderBy('updated_at')
+            ->limit($limit + 1)
             ->get(['id', 'original_filename', 'media_type', 'file_size', 'processing_status', 'created_at', 'updated_at', 'trashed_at']);
+
+        $hasMore = $media->count() > $limit;
+        if ($hasMore) {
+            $media = $media->take($limit);
+        }
 
         return response()->json([
             'since' => $since->toIso8601String(),
-            'items' => $media,
+            'items' => $media->values(),
             'count' => $media->count(),
+            'has_more' => $hasMore,
         ]);
     }
 
@@ -59,6 +67,9 @@ class SyncController extends Controller
             ]
         );
 
-        return response()->json($state, $state->wasRecentlyCreated ? 201 : 200);
+        return response()->json([
+            'device_id' => $state->device_id,
+            'last_sync_at' => $state->last_sync_at,
+        ], $state->wasRecentlyCreated ? 201 : 200);
     }
 }

@@ -21,6 +21,7 @@ describe('SyncController', function () {
                 'file_path' => "media/file{$i}.jpg",
                 'media_type' => 'image',
                 'file_size' => 1000 * $i,
+                'processing_status' => 'pending',
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -50,6 +51,7 @@ describe('SyncController', function () {
             'file_path' => 'media/other.jpg',
             'media_type' => 'image',
             'file_size' => 500,
+            'processing_status' => 'pending',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -71,6 +73,7 @@ describe('SyncController', function () {
             'file_path' => 'media/old.jpg',
             'media_type' => 'image',
             'file_size' => 100,
+            'processing_status' => 'pending',
             'created_at' => now()->subHour(),
             'updated_at' => now()->subHour(),
         ]);
