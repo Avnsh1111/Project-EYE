@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use App\Services\ResumableUploadService;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 
 uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
@@ -36,6 +37,7 @@ test('appendChunk stores data and returns bytes received', function () {
 });
 
 test('finalise assembles chunks and creates MediaFile', function () {
+    Queue::fake();
     Storage::fake('local');
     $user    = User::factory()->create();
     $service = new ResumableUploadService();
@@ -48,7 +50,7 @@ test('finalise assembles chunks and creates MediaFile', function () {
     $service->appendChunk($init['upload_id'], 40, substr($content, 40, 40));
     $service->appendChunk($init['upload_id'], 80, substr($content, 80, 20));
 
-    $mediaFile = $service->finalise($init['upload_id'], $user);
+    $mediaFile = $service->finalise($init['upload_id']);
 
     expect($mediaFile)->toBeInstanceOf(\App\Models\MediaFile::class);
     expect($mediaFile->original_filename)->toBe('photo.jpg');
@@ -60,4 +62,9 @@ test('finalise assembles chunks and creates MediaFile', function () {
     $destPath = Storage::disk('local')->path($mediaFile->file_path);
     expect(file_exists($destPath))->toBeTrue();
     expect(file_get_contents($destPath))->toBe($content);
+
+    // Verify the processing job was dispatched
+    Queue::assertPushed(\App\Jobs\ProcessImageAnalysis::class, function ($job) use ($mediaFile) {
+        return $job->imageFileId === $mediaFile->id;
+    });
 });

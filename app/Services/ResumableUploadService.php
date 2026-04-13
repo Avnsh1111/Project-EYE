@@ -68,12 +68,15 @@ class ResumableUploadService
         return ['received' => $received];
     }
 
-    public function finalise(string $uploadId, User $user): MediaFile
+    public function finalise(string $uploadId): MediaFile
     {
         $meta = Cache::get("upload:{$uploadId}");
         if (!$meta) {
             throw new RuntimeException("Upload session not found: {$uploadId}");
         }
+
+        // Use stored user_id from cache metadata
+        $user = \App\Models\User::findOrFail($meta['user_id']);
 
         $tempPath   = self::TEMP_DIR . "/{$uploadId}.tmp";
         $filename   = $meta['filename'];
@@ -109,6 +112,8 @@ class ResumableUploadService
         }
 
         Cache::forget("upload:{$uploadId}");
+
+        \App\Jobs\ProcessImageAnalysis::dispatch($mediaFile->id);
 
         return $mediaFile;
     }
