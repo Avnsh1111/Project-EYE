@@ -557,6 +557,60 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # Laravel Reverb WebSocket server
+  reverb:
+    build:
+      context: .
+      dockerfile: ./docker/laravel/Dockerfile
+    container_name: avinash-eye-reverb
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html:rw
+    command: php artisan reverb:start --host=0.0.0.0 --port=8081 --debug
+    ports:
+      - "${REVERB_HOST_PORT:-8082}:8081"
+    networks:
+      - avinash-network
+    environment:
+      - APP_NAME=${APP_NAME:-Avinash-EYE}
+      - APP_ENV=${APP_ENV:-production}
+      - APP_KEY=${APP_KEY}
+      - APP_DEBUG=${APP_DEBUG:-false}
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=${DB_DATABASE:-avinash_eye}
+      - DB_USERNAME=${DB_USERNAME:-avinash}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
+      - BROADCAST_CONNECTION=reverb
+      - REVERB_APP_ID=${REVERB_APP_ID:-avinash-eye}
+      - REVERB_APP_KEY=${REVERB_APP_KEY:-local-reverb-key}
+      - REVERB_APP_SECRET=${REVERB_APP_SECRET:-local-reverb-secret}
+      - REVERB_HOST=0.0.0.0
+      - REVERB_PORT=8081
+      - REVERB_SCHEME=${REVERB_SCHEME:-http}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 volumes:
   pgdata:
     driver: local
