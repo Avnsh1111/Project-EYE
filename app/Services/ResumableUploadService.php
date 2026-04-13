@@ -90,7 +90,9 @@ class ResumableUploadService
         if (!is_dir($destDir)) {
             mkdir($destDir, 0755, true);
         }
-        rename($tempFullPath, $destFullPath);
+        if (!rename($tempFullPath, $destFullPath)) {
+            throw new \RuntimeException("Failed to move temp file to final destination: {$destFullPath}");
+        }
 
         $fileSize = filesize($destFullPath);
         $mimeType = mime_content_type($destFullPath) ?: 'application/octet-stream';
