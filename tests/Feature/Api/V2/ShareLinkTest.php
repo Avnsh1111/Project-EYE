@@ -1,10 +1,12 @@
 <?php
 
+use App\Exceptions\ShareLinkException;
 use App\Models\MediaFile;
 use App\Models\ShareLink;
 use App\Models\User;
 use App\Services\ShareLinkService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
 
@@ -96,6 +98,8 @@ test('validate throws when max_views reached', function () {
 
     expect(fn () => $service->validate($link->token, null))
         ->toThrow(\App\Exceptions\ShareLinkException::class);
+
+    expect(ShareLink::find($link->id)->view_count)->toBe(2);
 });
 
 test('revoke deactivates the link', function () {
@@ -109,4 +113,24 @@ test('revoke deactivates the link', function () {
 
     expect(fn () => $service->validate($link->token, null))
         ->toThrow(\App\Exceptions\ShareLinkException::class);
+});
+
+it('prevents revoking another user\'s share link', function () {
+    $owner    = User::factory()->create();
+    $attacker = User::factory()->create();
+    $mediaId  = makeMedia($owner->id);
+
+    $link = ShareLink::create([
+        'user_id'       => $owner->id,
+        'media_file_id' => $mediaId,
+        'token'         => Str::random(64),
+        'is_active'     => true,
+        'view_count'    => 0,
+    ]);
+
+    $service = app(ShareLinkService::class);
+
+    $service->revoke($link->token, $attacker->id);
+
+    expect(ShareLink::find($link->id)->is_active)->toBeTrue();
 });

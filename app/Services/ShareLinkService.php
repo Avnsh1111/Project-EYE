@@ -44,13 +44,17 @@ class ShareLinkService
             throw new ShareLinkException('Invalid password.');
         }
 
-        if ($link->max_views !== null && $link->view_count >= $link->max_views) {
-            throw new ShareLinkException('Share link view limit reached.');
+        if ($link->max_views !== null) {
+            $updated = ShareLink::where('id', $link->id)
+                ->whereRaw('view_count < max_views')
+                ->increment('view_count');
+            if (!$updated) {
+                throw new ShareLinkException('Share link view limit reached.');
+            }
+        } else {
+            ShareLink::where('id', $link->id)->increment('view_count');
         }
-
-        // Increment view count atomically
-        ShareLink::where('id', $link->id)->increment('view_count');
-        $link->view_count++;
+        $link->refresh();
 
         return $link;
     }
