@@ -10,7 +10,8 @@ class MediaController extends Controller
 {
     public function index(Request $request)
     {
-        $media = MediaFile::whereNull('trashed_at')
+        $media = MediaFile::where('user_id', $request->user()->id)
+            ->whereNull('trashed_at')
             ->orderByDesc('created_at')
             ->paginate(20);
 
@@ -19,7 +20,9 @@ class MediaController extends Controller
 
     public function show(Request $request, int $id)
     {
-        $media = MediaFile::whereNull('trashed_at')->findOrFail($id);
+        $media = MediaFile::where('user_id', $request->user()->id)
+            ->whereNull('trashed_at')
+            ->findOrFail($id);
         return response()->json($media);
     }
 
