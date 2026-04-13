@@ -53,7 +53,10 @@ class ResumableUploadService
         if ($fh === false) {
             throw new \RuntimeException("Cannot open temp file for writing: {$fullPath}");
         }
-        fseek($fh, $offset);
+        if (fseek($fh, $offset) === -1) {
+            fclose($fh);
+            throw new \RuntimeException("Failed to seek to offset {$offset} in temp file: {$fullPath}");
+        }
         $written = fwrite($fh, $data);
         if ($written === false) {
             fclose($fh);
@@ -69,22 +72,22 @@ class ResumableUploadService
 
     public function finalise(string $uploadId): MediaFile
     {
-        $meta = Cache::get("upload:{$uploadId}");
-        if (!$meta) {
-            throw new RuntimeException("Upload session not found: {$uploadId}");
-        }
-
-        if ($meta['received'] < $meta['total_bytes']) {
-            throw new \RuntimeException(
-                "Upload incomplete: received {$meta['received']} of {$meta['total_bytes']} bytes."
-            );
-        }
-
         $lock = \Illuminate\Support\Facades\Cache::lock("upload_finalise:{$uploadId}", 30);
         if (!$lock->get()) {
             throw new \RuntimeException("Upload finalisation already in progress: {$uploadId}");
         }
         try {
+            $meta = Cache::get("upload:{$uploadId}");
+            if (!$meta) {
+                throw new RuntimeException("Upload session not found: {$uploadId}");
+            }
+
+            if ($meta['received'] < $meta['total_bytes']) {
+                throw new \RuntimeException(
+                    "Upload incomplete: received {$meta['received']} of {$meta['total_bytes']} bytes."
+                );
+            }
+
             // Use stored user_id from cache metadata
             $user = \App\Models\User::findOrFail($meta['user_id']);
 

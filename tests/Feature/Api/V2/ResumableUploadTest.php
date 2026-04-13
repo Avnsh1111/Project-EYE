@@ -26,6 +26,7 @@ afterEach(function () {
         foreach ($files as $file) {
             $file->isDir() ? @rmdir($file->getPathname()) : @unlink($file->getPathname());
         }
+        @rmdir($dir);
     }
 });
 
@@ -84,7 +85,7 @@ test('finalise assembles chunks and creates MediaFile', function () {
     expect(file_get_contents($destPath))->toBe($content);
 
     // Verify the processing job was dispatched
-    Queue::assertPushed(\App\Jobs\ProcessImageAnalysis::class, function ($job) use ($mediaFile) {
-        return $job->imageFileId === $mediaFile->id;
-    });
+    $pushed = Queue::pushed(\App\Jobs\ProcessImageAnalysis::class);
+    expect($pushed)->toHaveCount(1);
+    expect($pushed->first()->imageFileId)->toBe($mediaFile->id);
 });
