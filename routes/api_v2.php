@@ -34,4 +34,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/families', [FamilyController::class, 'store']);
     Route::post('/families/{id}/join', [FamilyController::class, 'join']);
     Route::delete('/families/{id}/leave', [FamilyController::class, 'leave']);
+
+    // Sync
+    Route::get('/sync/delta', [\App\Http\Controllers\Api\V2\SyncController::class, 'delta']);
+    Route::post('/sync/state', [\App\Http\Controllers\Api\V2\SyncController::class, 'upsertState']);
 });
