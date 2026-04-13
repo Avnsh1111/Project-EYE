@@ -74,49 +74,63 @@ class ResumableUploadService
             throw new RuntimeException("Upload session not found: {$uploadId}");
         }
 
-        // Use stored user_id from cache metadata
-        $user = \App\Models\User::findOrFail($meta['user_id']);
-
-        $tempPath   = self::TEMP_DIR . "/{$uploadId}.tmp";
-        $filename   = $meta['filename'];
-        $ext        = pathinfo($filename, PATHINFO_EXTENSION);
-        $storagePath = 'uploads/' . $user->id . '/' . Str::uuid() . '.' . $ext;
-
-        // Move temp file to final location
-        $tempFullPath = Storage::disk(self::TEMP_DISK)->path($tempPath);
-        $destFullPath = Storage::disk(self::TEMP_DISK)->path($storagePath);
-        $destDir      = dirname($destFullPath);
-        if (!is_dir($destDir)) {
-            mkdir($destDir, 0755, true);
-        }
-        if (!rename($tempFullPath, $destFullPath)) {
-            throw new \RuntimeException("Failed to move temp file to final destination: {$destFullPath}");
+        if ($meta['received'] < $meta['total_bytes']) {
+            throw new \RuntimeException(
+                "Upload incomplete: received {$meta['received']} of {$meta['total_bytes']} bytes."
+            );
         }
 
-        $fileSize = filesize($destFullPath);
-        $mimeType = mime_content_type($destFullPath) ?: 'application/octet-stream';
-        $mediaType = $this->detectMediaType($mimeType);
-
+        $lock = \Illuminate\Support\Facades\Cache::lock("upload_finalise:{$uploadId}", 30);
+        if (!$lock->get()) {
+            throw new \RuntimeException("Upload finalisation already in progress: {$uploadId}");
+        }
         try {
-            $mediaFile = MediaFile::withoutGlobalScopes()->create([
-                'user_id'           => $user->id,
-                'original_filename' => $filename,
-                'file_path'         => $storagePath,
-                'media_type'        => $mediaType,
-                'mime_type'         => $mimeType,
-                'file_size'         => $fileSize,
-                'processing_status' => 'pending',
-            ]);
-        } catch (\Throwable $e) {
-            @unlink($destFullPath);
-            throw $e;
+            // Use stored user_id from cache metadata
+            $user = \App\Models\User::findOrFail($meta['user_id']);
+
+            $tempPath   = self::TEMP_DIR . "/{$uploadId}.tmp";
+            $filename   = $meta['filename'];
+            $ext        = pathinfo($filename, PATHINFO_EXTENSION);
+            $storagePath = 'uploads/' . $user->id . '/' . Str::uuid() . '.' . $ext;
+
+            // Move temp file to final location
+            $tempFullPath = Storage::disk(self::TEMP_DISK)->path($tempPath);
+            $destFullPath = Storage::disk(self::TEMP_DISK)->path($storagePath);
+            $destDir      = dirname($destFullPath);
+            if (!is_dir($destDir)) {
+                mkdir($destDir, 0755, true);
+            }
+            if (!rename($tempFullPath, $destFullPath)) {
+                throw new \RuntimeException("Failed to move temp file to final destination: {$destFullPath}");
+            }
+
+            $fileSize = filesize($destFullPath);
+            $mimeType = mime_content_type($destFullPath) ?: 'application/octet-stream';
+            $mediaType = $this->detectMediaType($mimeType);
+
+            try {
+                $mediaFile = MediaFile::withoutGlobalScopes()->create([
+                    'user_id'           => $user->id,
+                    'original_filename' => $filename,
+                    'file_path'         => $storagePath,
+                    'media_type'        => $mediaType,
+                    'mime_type'         => $mimeType,
+                    'file_size'         => $fileSize,
+                    'processing_status' => 'pending',
+                ]);
+            } catch (\Throwable $e) {
+                @unlink($destFullPath);
+                throw $e;
+            }
+
+            \App\Jobs\ProcessImageAnalysis::dispatch($mediaFile->id);
+
+            Cache::forget("upload:{$uploadId}");
+
+            return $mediaFile;
+        } finally {
+            $lock->release();
         }
-
-        \App\Jobs\ProcessImageAnalysis::dispatch($mediaFile->id);
-
-        Cache::forget("upload:{$uploadId}");
-
-        return $mediaFile;
     }
 
     private function detectMediaType(string $mimeType): string

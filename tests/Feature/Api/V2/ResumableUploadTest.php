@@ -13,21 +13,18 @@ beforeEach(function () {
 });
 
 afterEach(function () {
-    $chunksDir = storage_path('app/resumable_uploads');
-    if (is_dir($chunksDir)) {
-        array_map('unlink', glob($chunksDir . '/*'));
-    }
-    $uploadsDir = storage_path('app/uploads');
-    if (is_dir($uploadsDir)) {
-        // Recursively remove files created during tests
+    $dirs = [
+        storage_path('app/resumable_uploads'),
+        storage_path('app/uploads'),
+    ];
+    foreach ($dirs as $dir) {
+        if (!is_dir($dir)) continue;
         $files = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($uploadsDir, \RecursiveDirectoryIterator::SKIP_DOTS),
+            new \RecursiveDirectoryIterator($dir, \RecursiveDirectoryIterator::SKIP_DOTS),
             \RecursiveIteratorIterator::CHILD_FIRST
         );
         foreach ($files as $file) {
-            if ($file->isFile()) {
-                @unlink($file->getPathname());
-            }
+            $file->isDir() ? @rmdir($file->getPathname()) : @unlink($file->getPathname());
         }
     }
 });
