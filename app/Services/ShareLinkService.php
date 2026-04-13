@@ -46,13 +46,19 @@ class ShareLinkService
 
         if ($link->max_views !== null) {
             $updated = ShareLink::where('id', $link->id)
+                ->where('is_active', true)
                 ->whereRaw('view_count < max_views')
                 ->increment('view_count');
             if (!$updated) {
                 throw new ShareLinkException('Share link view limit reached.');
             }
         } else {
-            ShareLink::where('id', $link->id)->increment('view_count');
+            $incremented = ShareLink::where('id', $link->id)
+                ->where('is_active', true)
+                ->increment('view_count');
+            if (!$incremented) {
+                throw new ShareLinkException('Share link not found or inactive.');
+            }
         }
         $link->refresh();
 

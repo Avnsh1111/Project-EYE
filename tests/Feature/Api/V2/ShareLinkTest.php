@@ -10,129 +10,132 @@ use Illuminate\Support\Str;
 
 uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
 
-function makeMedia(int $userId): int
-{
-    return DB::table('media_files')->insertGetId([
-        'user_id'           => $userId,
-        'original_filename' => 'test.jpg',
-        'file_path'         => 'uploads/' . uniqid() . '.jpg',
-        'media_type'        => 'image',
-        'mime_type'         => 'image/jpeg',
-        'file_size'         => 1024,
-        'processing_status' => 'completed',
-        'created_at'        => now(),
-        'updated_at'        => now(),
-    ]);
-}
+describe('ShareLinkService', function () {
+    beforeEach(function () {
+        $this->makeMedia = function (int $userId): int {
+            return DB::table('media_files')->insertGetId([
+                'user_id'           => $userId,
+                'original_filename' => 'test.jpg',
+                'file_path'         => 'uploads/' . uniqid() . '.jpg',
+                'media_type'        => 'image',
+                'mime_type'         => 'image/jpeg',
+                'file_size'         => 1024,
+                'processing_status' => 'completed',
+                'created_at'        => now(),
+                'updated_at'        => now(),
+            ]);
+        };
+    });
 
-test('create returns a ShareLink with a unique token', function () {
-    $user    = User::factory()->create();
-    $mediaId = makeMedia($user->id);
+    test('create returns a ShareLink with a unique token', function () {
+        $user    = User::factory()->create();
+        $mediaId = ($this->makeMedia)($user->id);
 
-    $service = new ShareLinkService();
-    $link    = $service->create([
-        'user_id'       => $user->id,
-        'media_file_id' => $mediaId,
-    ]);
+        $service = new ShareLinkService();
+        $link    = $service->create([
+            'user_id'       => $user->id,
+            'media_file_id' => $mediaId,
+        ]);
 
-    expect($link)->toBeInstanceOf(ShareLink::class);
-    expect($link->token)->toHaveLength(64);
-    expect($link->is_active)->toBeTrue();
-});
+        expect($link)->toBeInstanceOf(ShareLink::class);
+        expect($link->token)->toHaveLength(64);
+        expect($link->is_active)->toBeTrue();
+    });
 
-test('validate returns the share link for a valid token', function () {
-    $user    = User::factory()->create();
-    $mediaId = makeMedia($user->id);
+    test('validate returns the share link for a valid token', function () {
+        $user    = User::factory()->create();
+        $mediaId = ($this->makeMedia)($user->id);
 
-    $service = new ShareLinkService();
-    $link    = $service->create(['user_id' => $user->id, 'media_file_id' => $mediaId]);
+        $service = new ShareLinkService();
+        $link    = $service->create(['user_id' => $user->id, 'media_file_id' => $mediaId]);
 
-    $found = $service->validate($link->token, null);
-    expect($found->id)->toBe($link->id);
-    expect(ShareLink::find($link->id)->view_count)->toBe(1);
-});
+        $found = $service->validate($link->token, null);
+        expect($found->id)->toBe($link->id);
+        expect(ShareLink::find($link->id)->view_count)->toBe(1);
+    });
 
-test('validate throws for expired link', function () {
-    $user    = User::factory()->create();
-    $mediaId = makeMedia($user->id);
+    test('validate throws for expired link', function () {
+        $user    = User::factory()->create();
+        $mediaId = ($this->makeMedia)($user->id);
 
-    $service = new ShareLinkService();
-    $link    = $service->create([
-        'user_id'       => $user->id,
-        'media_file_id' => $mediaId,
-        'expires_at'    => now()->subHour(),
-    ]);
+        $service = new ShareLinkService();
+        $link    = $service->create([
+            'user_id'       => $user->id,
+            'media_file_id' => $mediaId,
+            'expires_at'    => now()->subHour(),
+        ]);
 
-    expect(fn () => $service->validate($link->token, null))
-        ->toThrow(\App\Exceptions\ShareLinkException::class);
-});
+        expect(fn () => $service->validate($link->token, null))
+            ->toThrow(\App\Exceptions\ShareLinkException::class);
+    });
 
-test('validate throws for wrong password', function () {
-    $user    = User::factory()->create();
-    $mediaId = makeMedia($user->id);
+    test('validate throws for wrong password', function () {
+        $user    = User::factory()->create();
+        $mediaId = ($this->makeMedia)($user->id);
 
-    $service = new ShareLinkService();
-    $link    = $service->create([
-        'user_id'       => $user->id,
-        'media_file_id' => $mediaId,
-        'password'      => 'secret123',
-    ]);
+        $service = new ShareLinkService();
+        $link    = $service->create([
+            'user_id'       => $user->id,
+            'media_file_id' => $mediaId,
+            'password'      => 'secret123',
+        ]);
 
-    expect(fn () => $service->validate($link->token, 'wrongpassword'))
-        ->toThrow(\App\Exceptions\ShareLinkException::class);
-});
+        expect(fn () => $service->validate($link->token, 'wrongpassword'))
+            ->toThrow(\App\Exceptions\ShareLinkException::class);
+    });
 
-test('validate throws when max_views reached', function () {
-    $user    = User::factory()->create();
-    $mediaId = makeMedia($user->id);
+    test('validate throws when max_views reached', function () {
+        $user    = User::factory()->create();
+        $mediaId = ($this->makeMedia)($user->id);
 
-    $service = new ShareLinkService();
-    $link    = $service->create([
-        'user_id'       => $user->id,
-        'media_file_id' => $mediaId,
-        'max_views'     => 2,
-    ]);
+        $service = new ShareLinkService();
+        $link    = $service->create([
+            'user_id'       => $user->id,
+            'media_file_id' => $mediaId,
+            'max_views'     => 2,
+        ]);
 
-    // Use up all views
-    $service->validate($link->token, null); // view 1
-    $service->validate($link->token, null); // view 2
+        // Use up all views
+        $service->validate($link->token, null); // view 1
+        $service->validate($link->token, null); // view 2
 
-    expect(fn () => $service->validate($link->token, null))
-        ->toThrow(\App\Exceptions\ShareLinkException::class);
+        expect(fn () => $service->validate($link->token, null))
+            ->toThrow(\App\Exceptions\ShareLinkException::class);
 
-    expect(ShareLink::find($link->id)->view_count)->toBe(2);
-});
+        expect(ShareLink::find($link->id)->view_count)->toBe(2);
+    });
 
-test('revoke deactivates the link', function () {
-    $user    = User::factory()->create();
-    $mediaId = makeMedia($user->id);
+    test('revoke deactivates the link', function () {
+        $user    = User::factory()->create();
+        $mediaId = ($this->makeMedia)($user->id);
 
-    $service = new ShareLinkService();
-    $link    = $service->create(['user_id' => $user->id, 'media_file_id' => $mediaId]);
+        $service = new ShareLinkService();
+        $link    = $service->create(['user_id' => $user->id, 'media_file_id' => $mediaId]);
 
-    $service->revoke($link->token, $user->id);
+        $service->revoke($link->token, $user->id);
 
-    expect(fn () => $service->validate($link->token, null))
-        ->toThrow(\App\Exceptions\ShareLinkException::class);
-});
+        expect(fn () => $service->validate($link->token, null))
+            ->toThrow(\App\Exceptions\ShareLinkException::class);
+    });
 
-it('prevents revoking another user\'s share link', function () {
-    $owner    = User::factory()->create();
-    $attacker = User::factory()->create();
-    $mediaId  = makeMedia($owner->id);
+    it('prevents revoking another user\'s share link', function () {
+        $owner    = User::factory()->create();
+        $attacker = User::factory()->create();
+        $mediaId  = ($this->makeMedia)($owner->id);
 
-    $link = ShareLink::create([
-        'user_id'       => $owner->id,
-        'media_file_id' => $mediaId,
-        'token'         => Str::random(64),
-        'is_active'     => true,
-        'view_count'    => 0,
-    ]);
+        $link = ShareLink::create([
+            'user_id'       => $owner->id,
+            'media_file_id' => $mediaId,
+            'token'         => Str::random(64),
+            'is_active'     => true,
+            'view_count'    => 0,
+        ]);
 
-    $service = app(ShareLinkService::class);
+        $service = app(ShareLinkService::class);
 
-    expect(fn () => $service->revoke($link->token, $attacker->id))
-        ->toThrow(ShareLinkException::class);
+        expect(fn () => $service->revoke($link->token, $attacker->id))
+            ->toThrow(ShareLinkException::class);
 
-    expect(ShareLink::find($link->id)->is_active)->toBeTrue();
+        expect(ShareLink::find($link->id)->is_active)->toBeTrue();
+    });
 });
