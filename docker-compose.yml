@@ -276,6 +276,13 @@ services:
       - SESSION_DRIVER=${SESSION_DRIVER:-file}
       - SCOUT_DRIVER=elasticsearch
       - ELASTICSEARCH_HOST=http://elasticsearch:9200
+      - BROADCAST_CONNECTION=reverb
+      - REVERB_APP_ID=${REVERB_APP_ID:-avinash-eye}
+      - REVERB_APP_KEY=${REVERB_APP_KEY:-local-reverb-key}
+      - REVERB_APP_SECRET=${REVERB_APP_SECRET:-local-reverb-secret}
+      - REVERB_HOST=reverb
+      - REVERB_PORT=8081
+      - REVERB_SCHEME=http
     depends_on:
       db:
         condition: service_healthy
@@ -383,6 +390,13 @@ services:
       - NODE_PROCESSOR_URL=http://node-processor:3000
       - AI_TIMEOUT=${AI_TIMEOUT:-300}
       - QUEUE_CONNECTION=${QUEUE_CONNECTION:-database}
+      - BROADCAST_CONNECTION=reverb
+      - REVERB_APP_ID=${REVERB_APP_ID:-avinash-eye}
+      - REVERB_APP_KEY=${REVERB_APP_KEY:-local-reverb-key}
+      - REVERB_APP_SECRET=${REVERB_APP_SECRET:-local-reverb-secret}
+      - REVERB_HOST=reverb
+      - REVERB_PORT=8081
+      - REVERB_SCHEME=http
     depends_on:
       laravel-app:
         condition: service_healthy
@@ -447,6 +461,13 @@ services:
       - NODE_PROCESSOR_URL=http://node-processor:3000
       - AI_TIMEOUT=${AI_TIMEOUT:-300}
       - QUEUE_CONNECTION=${QUEUE_CONNECTION:-database}
+      - BROADCAST_CONNECTION=reverb
+      - REVERB_APP_ID=${REVERB_APP_ID:-avinash-eye}
+      - REVERB_APP_KEY=${REVERB_APP_KEY:-local-reverb-key}
+      - REVERB_APP_SECRET=${REVERB_APP_SECRET:-local-reverb-secret}
+      - REVERB_HOST=reverb
+      - REVERB_PORT=8081
+      - REVERB_SCHEME=http
     depends_on:
       laravel-app:
         condition: service_healthy
@@ -566,7 +587,7 @@ services:
     working_dir: /var/www/html
     volumes:
       - .:/var/www/html:rw
-    command: php artisan reverb:start --host=0.0.0.0 --port=8081 --debug
+    command: php artisan reverb:start --host=0.0.0.0 --port=8081
     ports:
       - "${REVERB_HOST_PORT:-8082}:8081"
     networks:
@@ -593,11 +614,11 @@ services:
       db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/app/${REVERB_APP_KEY:-local-reverb-key} -o /dev/null -w '%{http_code}' | grep -qE '^(400|426|101)$'"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 30s
+      start_period: 10s
     restart: unless-stopped
     deploy:
       resources:
