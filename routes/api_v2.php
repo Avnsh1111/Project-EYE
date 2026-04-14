@@ -39,6 +39,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/sync/delta', [\App\Http\Controllers\Api\V2\SyncController::class, 'delta']);
     Route::post('/sync/state', [\App\Http\Controllers\Api\V2\SyncController::class, 'upsertState']);
 
+    // Resumable uploads
+    Route::post('/uploads/init', [\App\Http\Controllers\Api\V2\UploadController::class, 'init']);
+    Route::patch('/uploads/{uploadId}/chunks', [\App\Http\Controllers\Api\V2\UploadController::class, 'chunk']);
+    Route::post('/uploads/{uploadId}/finalise', [\App\Http\Controllers\Api\V2\UploadController::class, 'finalise']);
+
     // Admin routes — gated by admin policy
     Route::middleware('can:admin')->prefix('admin')->group(function () {
         Route::get('/users', [\App\Http\Controllers\Api\V2\AdminController::class, 'users']);

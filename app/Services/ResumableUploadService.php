@@ -107,6 +107,25 @@ class ResumableUploadService
                 throw new \RuntimeException("Failed to move temp file to final destination: {$destFullPath}");
             }
 
+            $dedup = app(\App\Services\DeduplicationService::class);
+            $hash  = $dedup->hashFile($destFullPath);
+
+            // Check for existing duplicate for this user via DeduplicationService
+            if ($dedup->isDuplicate($hash, $user->id)) {
+                $existing = \App\Models\MediaFile::withoutGlobalScopes()
+                    ->where('user_id', $user->id)
+                    ->where('file_hash', $hash)
+                    ->whereNull('deleted_at')
+                    ->first();
+
+                if ($existing !== null) {
+                    // Remove the just-moved file since we're reusing existing record
+                    @unlink($destFullPath);
+                    Cache::forget("upload:{$uploadId}");
+                    return $existing;
+                }
+            }
+
             $fileSize = filesize($destFullPath);
             $mimeType = mime_content_type($destFullPath) ?: 'application/octet-stream';
             $mediaType = $this->detectMediaType($mimeType);
@@ -119,6 +138,7 @@ class ResumableUploadService
                     'media_type'        => $mediaType,
                     'mime_type'         => $mimeType,
                     'file_size'         => $fileSize,
+                    'file_hash'         => $hash,
                     'processing_status' => 'pending',
                 ]);
             } catch (\Throwable $e) {
