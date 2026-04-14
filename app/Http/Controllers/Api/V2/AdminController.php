@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\QuotaService;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class AdminController extends Controller
 {
@@ -42,14 +43,16 @@ class AdminController extends Controller
             ->whereNull('trashed_at')
             ->count();
 
-        $totalStorage = (int) MediaFile::withoutGlobalScopes([SoftDeletingScope::class, 'user_scope'])
+        $totalStorage = MediaFile::withoutGlobalScopes([SoftDeletingScope::class, 'user_scope'])
             ->whereNull('trashed_at')
             ->sum('file_size');
 
-        $perUser = MediaFile::withoutGlobalScopes([SoftDeletingScope::class, 'user_scope'])
-            ->whereNull('trashed_at')
-            ->selectRaw('user_id, COUNT(*) as file_count, SUM(file_size) as storage_bytes')
-            ->groupBy('user_id')
+        $perUser = DB::table('media_files')
+            ->leftJoin('users', 'users.id', '=', 'media_files.user_id')
+            ->whereNull('media_files.trashed_at')
+            ->whereNull('media_files.deleted_at')
+            ->selectRaw('media_files.user_id, users.name, users.email, COUNT(*) as file_count, SUM(media_files.file_size) as storage_bytes')
+            ->groupBy('media_files.user_id', 'users.name', 'users.email')
             ->get();
 
         return response()->json([
@@ -62,7 +65,7 @@ class AdminController extends Controller
     public function updateUserQuota(Request $request, int $id)
     {
         $request->validate([
-            'quota_bytes' => 'required|integer|min:0',
+            'quota_bytes' => 'required|integer|min:0|max:10995116277760',  // 10 TB
         ]);
 
         $user = User::findOrFail($id);
