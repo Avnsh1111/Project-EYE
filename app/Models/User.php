@@ -47,6 +47,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'is_admin' => 'boolean',
             'two_factor_enabled' => 'boolean',
             'locked_until' => 'datetime',
             'last_login_at' => 'datetime',

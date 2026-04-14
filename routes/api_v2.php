@@ -38,4 +38,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // Sync
     Route::get('/sync/delta', [\App\Http\Controllers\Api\V2\SyncController::class, 'delta']);
     Route::post('/sync/state', [\App\Http\Controllers\Api\V2\SyncController::class, 'upsertState']);
+
+    // Admin routes — gated by admin policy
+    Route::middleware('can:admin')->prefix('admin')->group(function () {
+        Route::get('/users', [\App\Http\Controllers\Api\V2\AdminController::class, 'users']);
+        Route::get('/stats', [\App\Http\Controllers\Api\V2\AdminController::class, 'stats']);
+        Route::patch('/users/{id}/quota', [\App\Http\Controllers\Api\V2\AdminController::class, 'updateUserQuota']);
+    });
 });
