@@ -300,7 +300,7 @@ class ProcessImageAnalysis implements ShouldQueue
                     $prompt = "Based on these sequential video frame descriptions from a {$duration} second video, write a coherent 2-3 sentence summary describing what happens in the video:\n\n- {$sceneContext}\n\nSummary:";
 
                     $ollamaModel = Setting::get('ollama_model', 'llava');
-                    $response = Http::timeout(90)->post(config('services.ollama.url', 'http://ollama:11434') . '/api/generate', [
+                    $response = Http::timeout(90)->post(config('ai.ollama_url') . '/api/generate', [
                         'model' => $ollamaModel,
                         'prompt' => $prompt,
                         'stream' => false,
@@ -438,7 +438,7 @@ class ProcessImageAnalysis implements ShouldQueue
 
         try {
             // Call Python API to extract email metadata
-            $pythonUrl = config('services.python_ai.url', 'http://python-ai:8000');
+            $pythonUrl = config('ai.api_url', 'http://python-ai:8000');
             $response = Http::timeout(30)->post("{$pythonUrl}/extract-email", [
                 'file_path' => $emailFile->file_path,
             ]);
@@ -492,7 +492,7 @@ class ProcessImageAnalysis implements ShouldQueue
 
         try {
             // Call Python API to extract archive metadata
-            $pythonUrl = config('services.python_ai.url', 'http://python-ai:8000');
+            $pythonUrl = config('ai.api_url', 'http://python-ai:8000');
             $response = Http::timeout(30)->post("{$pythonUrl}/extract-archive-metadata", [
                 'file_path' => $archiveFile->file_path,
             ]);
@@ -574,7 +574,7 @@ class ProcessImageAnalysis implements ShouldQueue
 
         try {
             // Call Python API to analyze code file
-            $pythonUrl = config('services.python_ai.url', 'http://python-ai:8000');
+            $pythonUrl = config('ai.api_url', 'http://python-ai:8000');
             $response = Http::timeout(30)->post("{$pythonUrl}/analyze-code-file", [
                 'file_path' => $codeFile->file_path,
             ]);

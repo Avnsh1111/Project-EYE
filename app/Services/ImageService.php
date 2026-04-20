@@ -68,6 +68,8 @@ class ImageService
             'has_gps' => $image->gps_latitude && $image->gps_longitude,
             // Status
             'is_trashed' => $image->trashed(),
+            'starred_at' => $image->starred_at,
+            'trashed_at' => $image->trashed_at,
         ];
     }
 
@@ -274,7 +276,7 @@ class ImageService
         return [
             'total' => MediaFile::count(),
             'favorites' => MediaFile::where('is_favorite', true)->count(),
-            'trashed' => MediaFile::onlyTrashed()->count(),
+            'trashed' => MediaFile::whereNotNull('trashed_at')->count(),
             'completed' => MediaFile::where('processing_status', 'completed')->count(),
             'pending' => MediaFile::where('processing_status', 'pending')->count(),
             'processing' => MediaFile::where('processing_status', 'processing')->count(),
@@ -296,9 +298,9 @@ class ImageService
         
         // Apply filters
         if ($filters['showTrash'] ?? false) {
-            $query->onlyTrashed();
+            $query->whereNotNull('trashed_at');
         } else {
-            $query->whereNull('deleted_at');
+            $query->notTrashed();
         }
         
         if ($filters['showFavorites'] ?? false) {

@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use Livewire\Component;
+use Livewire\Attributes\Computed;
 use App\Models\MediaFile;
 use App\Services\ImageService;
 use App\Services\SearchService;
@@ -542,6 +543,61 @@ class EnhancedImageGallery extends Component
             $filename = $file->original_filename ?? basename($file->file_path);
             $this->dispatch('download-image', url: $url, filename: $filename);
         }
+    }
+
+    public function toggleStar(int $mediaId): void
+    {
+        $media = MediaFile::findOrFail($mediaId);
+
+        if ($media->starred_at) {
+            $media->update(['starred_at' => null]);
+        } else {
+            $media->update(['starred_at' => now()]);
+        }
+
+        $this->dispatch('media-updated', id: $mediaId);
+        $this->loadImages();
+        $this->loadStats();
+    }
+
+    public function trashMedia(int $mediaId): void
+    {
+        $media = MediaFile::findOrFail($mediaId);
+        $media->update(['trashed_at' => now()]);
+        $this->dispatch('media-updated', id: $mediaId);
+        $this->loadImages();
+        $this->loadStats();
+    }
+
+    public function restoreMedia(int $mediaId): void
+    {
+        $media = MediaFile::findOrFail($mediaId);
+        $media->update(['trashed_at' => null]);
+        $this->dispatch('media-updated', id: $mediaId);
+        $this->loadImages();
+        $this->loadStats();
+    }
+
+    #[Computed(persist: true)]
+    public function memories(): \Illuminate\Support\Collection
+    {
+        return MediaFile::query()
+            ->where('media_type', 'image')
+            ->whereNull('trashed_at')
+            ->whereNotNull('date_taken')
+            ->where('date_taken', '>=', now()->subYears(2))
+            ->selectRaw("DATE_TRUNC('month', date_taken) as month, COUNT(*) as count, MIN(id) as cover_id")
+            ->groupByRaw("DATE_TRUNC('month', date_taken)")
+            ->orderByDesc('month')
+            ->limit(8)
+            ->get()
+            ->map(function ($row) {
+                return [
+                    'label'    => \Carbon\Carbon::parse($row->month)->format('M Y'),
+                    'count'    => $row->count,
+                    'cover_id' => $row->cover_id,
+                ];
+            });
     }
 
     public function render()

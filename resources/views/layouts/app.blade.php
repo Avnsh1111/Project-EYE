@@ -154,45 +154,39 @@
                     @php
                         $currentRoute = request()->route()->getName();
                         $navItems = [
-                            ['route' => 'gallery', 'icon' => 'photo_library', 'label' => 'Photos'],
-                            ['route' => 'documents', 'icon' => 'description', 'label' => 'Documents'],
-                            ['route' => 'collections', 'icon' => 'folder', 'label' => 'Collections'],
-                            ['route' => 'people-and-pets', 'icon' => 'face', 'label' => 'People & Pets'],
-                            ['route' => 'instant-upload', 'icon' => 'upload', 'label' => 'Upload'],
-                        ];
-                        $systemItems = [
-                            ['route' => 'system-monitor', 'icon' => 'monitoring', 'label' => 'System Monitor'],
-                            ['route' => 'settings', 'icon' => 'settings', 'label' => 'Settings'],
+                            // Primary navigation
+                            ['route' => 'gallery',        'icon' => 'photo_library',       'label' => 'Photos',        'section' => null],
+                            ['route' => 'search',         'icon' => 'search',              'label' => 'Search',         'section' => null],
+                            ['route' => 'documents',      'icon' => 'folder',              'label' => 'Files',          'section' => null],
+                            ['route' => 'people-and-pets','icon' => 'face',                'label' => 'People',         'section' => null],
+                            // Organise section
+                            ['route' => 'collections',    'icon' => 'auto_awesome_mosaic', 'label' => 'Albums',         'section' => 'Organise'],
+                            ['route' => 'instant-upload', 'icon' => 'upload',              'label' => 'Upload',         'section' => null],
+                            // Admin section
+                            ['route' => 'system-monitor', 'icon' => 'monitoring',          'label' => 'System Monitor', 'section' => 'Admin'],
+                            ['route' => 'settings',       'icon' => 'settings',            'label' => 'Settings',       'section' => null],
                         ];
                     @endphp
 
                     <div class="space-y-1">
+                        @php $lastSection = null; @endphp
                         @foreach ($navItems as $item)
-                            <a href="{{ route($item['route']) }}" 
+                            @if ($item['section'] && $item['section'] !== $lastSection)
+                                @php $lastSection = $item['section']; @endphp
+                                <div class="px-3 pt-4 pb-1">
+                                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">{{ $item['section'] }}</p>
+                                </div>
+                            @endif
+                            <a href="{{ route($item['route']) }}"
                                class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
-                                      {{ $currentRoute === $item['route'] 
-                                         ? 'bg-primary-50 text-primary-600' 
+                                      {{ $currentRoute === $item['route']
+                                         ? 'bg-primary-50 text-primary-600 font-semibold'
                                          : 'text-gray-700 hover:bg-gray-100' }}">
-                                <span class="material-symbols-outlined text-xl">{{ $item['icon'] }}</span>
-                                <span>{{ $item['label'] }}</span>
-                            </a>
-                        @endforeach
-                    </div>
-
-                    <div class="h-px bg-outline my-4"></div>
-
-                    <div class="space-y-1">
-                        <p class="px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            System
-                        </p>
-                        @foreach ($systemItems as $item)
-                            <a href="{{ route($item['route']) }}" 
-                               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
-                                      {{ $currentRoute === $item['route'] 
-                                         ? 'bg-primary-50 text-primary-600' 
-                                         : 'text-gray-700 hover:bg-gray-100' }}">
-                                <span class="material-symbols-outlined text-xl">{{ $item['icon'] }}</span>
-                                <span>{{ $item['label'] }}</span>
+                                <span class="material-symbols-outlined text-xl
+                                      {{ $currentRoute === $item['route'] ? 'text-primary-600' : '' }}">
+                                    {{ $item['icon'] }}
+                                </span>
+                                {{ $item['label'] }}
                             </a>
                         @endforeach
                     </div>

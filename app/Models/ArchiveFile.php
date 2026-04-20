@@ -109,15 +109,22 @@ class ArchiveFile extends MediaFile
     }
 
     /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'is_encrypted' => 'boolean',
+    ];
+
+    /**
      * Check if archive has a password.
      *
      * @return bool
      */
     public function hasPassword(): bool
     {
-        // This would need to be determined during processing
-        // For now, return false as a placeholder
-        return false;
+        return $this->is_encrypted ?? false;
     }
 
     /**

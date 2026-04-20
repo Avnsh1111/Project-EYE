@@ -209,6 +209,35 @@ class="min-h-screen bg-white">
 
     <!-- Main Content -->
     <div class="max-w-[2000px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {{-- Memories strip --}}
+        @if($this->memories->isNotEmpty() && !$showTrash && !$showFavorites && empty($searchQuery))
+        <div class="mb-6">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-base font-semibold text-gray-800">Memories</h2>
+                <span class="text-xs text-primary-600 cursor-pointer hover:underline">See all</span>
+            </div>
+            <div class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                @foreach($this->memories as $memory)
+                <div class="flex-shrink-0 w-28 rounded-2xl overflow-hidden relative cursor-pointer
+                            hover:scale-105 transition-transform duration-200 shadow-md"
+                     style="aspect-ratio: 3/4; background: linear-gradient(135deg, #1e3a5f, #2d6a9f)">
+                    {{-- Cover image --}}
+                    <img src="{{ route('media.thumbnail', $memory['cover_id']) }}"
+                         class="absolute inset-0 w-full h-full object-cover"
+                         loading="lazy"
+                         onerror="this.style.display='none'"
+                         alt="{{ $memory['label'] }}"/>
+                    {{-- Label overlay --}}
+                    <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+                        <p class="text-white text-xs font-semibold leading-tight">{{ $memory['label'] }}</p>
+                        <p class="text-white/70 text-xs">{{ $memory['count'] }} photos</p>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
         @if (empty($files))
             <!-- Empty State -->
             <div class="flex flex-col items-center justify-center py-20 text-center">
@@ -298,6 +327,29 @@ class="min-h-screen bg-white">
                                     star
                                 </span>
                             </div>
+                        @endif
+
+                        {{-- Star/Trash action overlay --}}
+                        @if (!$selectionMode)
+                        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 rounded-md pointer-events-none">
+                            <div class="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto">
+                                {{-- Star button --}}
+                                <button wire:click.stop="toggleStar({{ $file['id'] }})"
+                                        class="w-7 h-7 rounded-full bg-black/50 flex items-center justify-center hover:bg-black/70 transition-colors"
+                                        title="{{ $file['starred_at'] ? 'Unstar' : 'Star' }}">
+                                    <span class="material-symbols-outlined text-sm {{ $file['starred_at'] ? 'text-yellow-400' : 'text-white' }}">
+                                        {{ $file['starred_at'] ? 'star' : 'star_border' }}
+                                    </span>
+                                </button>
+                                {{-- Trash button --}}
+                                <button wire:click.stop="trashMedia({{ $file['id'] }})"
+                                        wire:confirm="Move this item to trash?"
+                                        class="w-7 h-7 rounded-full bg-black/50 flex items-center justify-center hover:bg-red-600/80 transition-colors"
+                                        title="Move to trash">
+                                    <span class="material-symbols-outlined text-sm text-white">delete</span>
+                                </button>
+                            </div>
+                        </div>
                         @endif
                     </div>
                 @endforeach

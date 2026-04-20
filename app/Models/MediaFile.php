@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 use Laravel\Scout\Searchable;
@@ -32,6 +33,7 @@ class MediaFile extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'user_id',
         'media_type',
         'batch_id',
         'file_path',
@@ -111,6 +113,17 @@ class MediaFile extends Model
         'upload_started_at',
         'upload_completed_at',
         'processing_stage',
+        // Archive fields
+        'compression_type',
+        'uncompressed_size',
+        'file_count',
+        'file_list',
+        'is_encrypted',
+        // Star / trash state
+        'starred_at',
+        'trashed_at',
+        // Deduplication
+        'file_hash',
     ];
 
     /**
@@ -146,6 +159,8 @@ class MediaFile extends Model
         'upload_started_at' => 'datetime',
         'upload_completed_at' => 'datetime',
         'upload_progress' => 'integer',
+        'starred_at' => 'datetime',
+        'trashed_at' => 'datetime',
     ];
 
     /**
@@ -174,6 +189,21 @@ class MediaFile extends Model
             $mediaType = $instance->getMediaType();
             $builder->where('media_type', $mediaType);
         });
+
+        // Filter media files by the authenticated user
+        static::addGlobalScope('user_scope', function ($query) {
+            if (auth()->check()) {
+                $query->where('media_files.user_id', auth()->id());
+            }
+        });
+    }
+
+    /**
+     * Get the user that owns the media file.
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     /**
@@ -211,9 +241,12 @@ class MediaFile extends Model
         // Convert array to pgvector format
         $vectorString = '[' . implode(',', $queryEmbedding) . ']';
 
+        // Get the authenticated user id for scoping results
+        $userId = auth()->id();
+
         // Build media type filter with proper parameter binding
         $mediaTypeFilter = '';
-        $bindings = [$vectorString, $vectorString, $minSimilarity, $vectorString, $limit];
+        $bindings = [$vectorString, $vectorString, $minSimilarity, $userId, $userId, $vectorString, $limit];
 
         if ($mediaTypes !== null && count($mediaTypes) > 0) {
             // Create placeholders for IN clause
@@ -244,6 +277,7 @@ class MediaFile extends Model
             WHERE embedding IS NOT NULL
               AND deleted_at IS NULL
               AND (1 - (embedding <=> ?::vector)) >= ?
+              AND (? IS NULL OR media_files.user_id = ?)
               AND processing_status = 'completed'
               $mediaTypeFilter
             ORDER BY embedding <=> ?::vector
@@ -361,6 +395,39 @@ class MediaFile extends Model
     public function scopeInAlbum($query, string $album)
     {
         return $query->where('album', $album);
+    }
+
+    /**
+     * Scope to get starred media files.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeStarred($query)
+    {
+        return $query->whereNotNull('starred_at');
+    }
+
+    /**
+     * Scope to exclude soft-trashed (trashed_at) media files.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeNotTrashed($query)
+    {
+        return $query->whereNull('trashed_at');
+    }
+
+    /**
+     * Scope to get only trashed (trashed_at) media files.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeTrashed($query)
+    {
+        return $query->whereNotNull('trashed_at');
     }
 
     /**
