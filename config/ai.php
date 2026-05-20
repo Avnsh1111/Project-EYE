@@ -16,6 +16,13 @@ return [
 
     'ollama_url' => env('OLLAMA_URL', 'http://ollama:11434'),
 
+    /*
+     * Path prefix the Python service uses to read media. In Docker this is
+     * the shared volume mount (/app/shared/). On host (Valet) set it to the
+     * absolute storage/app/public/ path so Python reads files directly.
+     */
+    'shared_prefix' => env('AI_SHARED_PREFIX', '/app/shared/'),
+
     'timeout' => env('AI_TIMEOUT', 120), // Legacy fallback
 
     /**

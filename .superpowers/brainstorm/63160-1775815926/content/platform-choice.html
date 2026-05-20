@@ -1,0 +1,48 @@
+<h2>NativePHP Platform Strategy</h2>
+<p class="subtitle">NativePHP has two distinct products — pick the target platform(s) for the rebuild</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>NativePHP Mobile (iOS + Android)</h3>
+      <p>Replaces the React Native app entirely. Uses Capacitor under the hood. Your Laravel/PHP code compiles into a native iOS/Android app. Auto-backup from camera roll, push notifications, background sync — all available via device APIs.</p>
+      <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+        <span style="background:rgba(52,211,153,0.15);color:#34d399;padding:2px 10px;border-radius:999px;font-size:0.78rem;font-weight:600;">Single codebase PHP → Mobile</span>
+        <span style="background:rgba(251,191,36,0.15);color:#fbbf24;padding:2px 10px;border-radius:999px;font-size:0.78rem;font-weight:600;">Early Access — some rough edges</span>
+        <span style="background:rgba(96,165,250,0.15);color:#60a5fa;padding:2px 10px;border-radius:999px;font-size:0.78rem;font-weight:600;">iOS + Android</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>NativePHP Desktop (Mac + Windows + Linux)</h3>
+      <p>Wraps the existing Laravel/Livewire web app into a desktop app using Electron. Adds system tray, native menus, folder watching for auto-import, background sync daemon, and native file dialogs. The web app runs inside a native window.</p>
+      <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+        <span style="background:rgba(52,211,153,0.15);color:#34d399;padding:2px 10px;border-radius:999px;font-size:0.78rem;font-weight:600;">Stable + Production Ready</span>
+        <span style="background:rgba(52,211,153,0.15);color:#34d399;padding:2px 10px;border-radius:999px;font-size:0.78rem;font-weight:600;">Reuses existing Livewire UI</span>
+        <span style="background:rgba(96,165,250,0.15);color:#60a5fa;padding:2px 10px;border-radius:999px;font-size:0.78rem;font-weight:600;">Mac / Win / Linux</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Both — Desktop App + Mobile App</h3>
+      <p>Build a NativePHP Desktop app (wrapping the web UI) AND a NativePHP Mobile app (iOS/Android). The desktop app handles folder watching & auto-import from your computer. The mobile app handles camera roll backup from your phone. Both sync to the same self-hosted server.</p>
+      <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+        <span style="background:rgba(52,211,153,0.15);color:#34d399;padding:2px 10px;border-radius:999px;font-size:0.78rem;font-weight:600;">Full Google Photos parity</span>
+        <span style="background:rgba(248,113,113,0.15);color:#f87171;padding:2px 10px;border-radius:999px;font-size:0.78rem;font-weight:600;">Most complex</span>
+        <span style="background:rgba(124,106,247,0.15);color:#a78bfa;padding:2px 10px;border-radius:999px;font-size:0.78rem;font-weight:600;">All platforms</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top: 2rem; background: rgba(46,50,80,0.5); border: 1px solid #2e3250; border-radius: 10px; padding: 1.25rem;">
+  <div style="font-size:0.85rem; color:#8892b0; margin-bottom:0.5rem; text-transform:uppercase; letter-spacing:0.06em; font-weight:600;">Note on NativePHP Mobile</div>
+  <p style="font-size:0.88rem; color:#c7d2fe; margin:0;">NativePHP Mobile (https://nativephp.com/docs/mobile) was announced and is in early access. It wraps your Laravel app with Capacitor to produce native iOS/Android binaries. Camera, GPS, push notifications, background tasks, and file system access are all available via PHP APIs.</p>
+</div>

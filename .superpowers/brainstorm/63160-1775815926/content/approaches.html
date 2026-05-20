@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Implementation Approaches</title>
+<script src="/helper.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f1117;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;padding:2rem;font-size:14px}
+h2{font-size:1.35rem;font-weight:700;color:#c7d2fe;margin-bottom:.35rem}
+.subtitle{color:#8892b0;margin-bottom:1.75rem;font-size:.9rem}
+
+.approaches{display:flex;flex-direction:column;gap:1.25rem}
+.approach{background:#1a1d27;border:2px solid #2e3250;border-radius:14px;overflow:hidden;cursor:pointer;transition:all .2s}
+.approach:hover{border-color:#7c6af7}
+.approach.selected{border-color:#7c6af7;background:#1e1b4b}
+.approach.recommended{border-color:#059669}
+.approach.recommended:hover{border-color:#34d399}
+.approach.recommended.selected{border-color:#34d399;background:#022c22}
+
+.approach-header{padding:1rem 1.25rem .75rem;display:flex;align-items:center;gap:.75rem}
+.approach-letter{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1rem;color:#fff;flex-shrink:0}
+.approach-title-block{flex:1}
+.approach-title{font-size:1rem;font-weight:700;color:#e2e8f0;display:flex;align-items:center;gap:.5rem}
+.approach-subtitle{font-size:.8rem;color:#8892b0;margin-top:.15rem}
+.rec-badge{background:#059669;color:#fff;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:999px}
+
+.approach-body{padding:0 1.25rem 1.25rem}
+
+/* Phase timeline */
+.timeline{display:flex;gap:0;margin-bottom:1rem;border-radius:8px;overflow:hidden}
+.phase{flex:1;padding:.5rem .75rem;text-align:center;position:relative}
+.phase-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.15rem}
+.phase-name{font-size:.78rem;color:#e2e8f0;font-weight:600;margin-bottom:.15rem}
+.phase-detail{font-size:.68rem;color:rgba(255,255,255,.5);line-height:1.4}
+.phase-sep{width:1px;background:rgba(255,255,255,.08);flex-shrink:0}
+
+/* phase colors */
+.ph-red{background:rgba(248,113,113,.12);border-top:2px solid #f87171}
+.ph-orange{background:rgba(249,115,22,.12);border-top:2px solid #f97316}
+.ph-blue{background:rgba(96,165,250,.12);border-top:2px solid #60a5fa}
+.ph-purple{background:rgba(124,106,247,.12);border-top:2px solid #a78bfa}
+.ph-green{background:rgba(52,211,153,.12);border-top:2px solid #34d399}
+.ph-teal{background:rgba(20,184,166,.12);border-top:2px solid #2dd4bf}
+.ph-yellow{background:rgba(251,191,36,.12);border-top:2px solid #fbbf24}
+.ph-indigo{background:rgba(99,102,241,.12);border-top:2px solid #818cf8}
+
+/* two-col details */
+.details{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.detail-col h4{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem}
+.detail-col ul{list-style:none;display:flex;flex-direction:column;gap:3px}
+.detail-col ul li{display:flex;align-items:flex-start;gap:6px;font-size:.8rem;color:#8892b0;line-height:1.4}
+.bullet{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.b-green{background:#34d399}
+.b-red{background:#f87171}
+.b-yellow{background:#fbbf24}
+.b-blue{background:#60a5fa}
+
+.tag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.72rem;font-weight:600;margin:.2rem .2rem 0 0}
+.tag-green{background:rgba(52,211,153,.15);color:#34d399}
+.tag-yellow{background:rgba(251,191,36,.12);color:#fbbf24}
+.tag-blue{background:rgba(96,165,250,.15);color:#60a5fa}
+.tag-red{background:rgba(248,113,113,.15);color:#f87171}
+.tag-purple{background:rgba(124,106,247,.15);color:#a78bfa}
+
+.divider{border:none;border-top:1px solid #2e3250;margin:.75rem 0}
+
+/* Parallel swim lanes */
+.swimlanes{display:flex;flex-direction:column;gap:4px;margin-bottom:.85rem}
+.lane{display:flex;gap:4px;align-items:center}
+.lane-label{width:90px;font-size:.72rem;color:#9ca3af;text-align:right;padding-right:8px;flex-shrink:0}
+.lane-body{flex:1;display:flex;gap:4px}
+.lane-block{border-radius:5px;padding:4px 8px;font-size:.7rem;font-weight:600;color:#fff;text-align:center;white-space:nowrap}
+.lane-empty{flex:1}
+.lane-bg-red{background:rgba(239,68,68,.7)}
+.lane-bg-orange{background:rgba(249,115,22,.7)}
+.lane-bg-blue{background:rgba(59,130,246,.7)}
+.lane-bg-purple{background:rgba(124,58,237,.7)}
+.lane-bg-green{background:rgba(5,150,105,.7)}
+.lane-bg-teal{background:rgba(20,184,166,.7)}
+.lane-bg-indigo{background:rgba(99,102,241,.7)}
+.lane-sep{height:1px;background:#2e3250;margin:2px 0}
+.weeks{display:flex;margin-left:98px;margin-bottom:4px}
+.week-label{flex:1;font-size:.62rem;color:#4b5563;text-align:center;font-weight:600}
+</style>
+</head>
+<body>
+<h2>3 Implementation Approaches</h2>
+<p class="subtitle">How to sequence fixing the web bugs, scrapping React Native, and building both NativePHP apps</p>
+
+<div class="approaches">
+
+  <!-- APPROACH 1 -->
+  <div class="approach" data-choice="a" onclick="toggleSelect(this)">
+    <div class="approach-header">
+      <div class="approach-letter" style="background:#4f46e5">1</div>
+      <div class="approach-title-block">
+        <div class="approach-title">Sequential — Fix → Desktop → Mobile</div>
+        <div class="approach-subtitle">Each phase is stable before the next begins</div>
+      </div>
+    </div>
+    <div class="approach-body">
+      <div class="timeline">
+        <div class="phase ph-red"><div class="phase-label" style="color:#f87171">Week 1–2</div><div class="phase-name">Fix Bugs</div><div class="phase-detail">2 critical bugs, .env, event listeners, config keys</div></div>
+        <div class="phase-sep"></div>
+        <div class="phase ph-orange"><div class="phase-label" style="color:#f97316">Week 3–5</div><div class="phase-name">New Features</div><div class="phase-detail">Multi-user, sharing links, quotas, admin panel</div></div>
+        <div class="phase-sep"></div>
+        <div class="phase ph-blue"><div class="phase-label" style="color:#60a5fa">Week 6–9</div><div class="phase-name">NativePHP Desktop</div><div class="phase-detail">System tray, folder watch, auto-import, native menus</div></div>
+        <div class="phase-sep"></div>
+        <div class="phase ph-purple"><div class="phase-label" style="color:#a78bfa">Week 10–14</div><div class="phase-name">NativePHP Mobile</div><div class="phase-detail">Scrap React Native, build iOS + Android with camera backup</div></div>
+      </div>
+      <div class="details">
+        <div class="detail-col">
+          <h4 style="color:#34d399">Pros</h4>
+          <ul>
+            <li><div class="bullet b-green"></div>Lowest risk — each phase fully tested before next</li>
+            <li><div class="bullet b-green"></div>Desktop shares existing web UI — reuses 90% of code</li>
+            <li><div class="bullet b-green"></div>Web bugs fixed immediately (production blocker)</li>
+            <li><div class="bullet b-green"></div>Clear milestones to track progress</li>
+          </ul>
+        </div>
+        <div class="detail-col">
+          <h4 style="color:#f87171">Cons</h4>
+          <ul>
+            <li><div class="bullet b-red"></div>Mobile app is last — 14 weeks to first mobile build</li>
+            <li><div class="bullet b-red"></div>No parallelisation — one thing at a time</li>
+          </ul>
+        </div>
+      </div>
+      <span class="tag tag-blue">14 weeks total</span><span class="tag tag-green">Lowest risk</span><span class="tag tag-purple">Clear milestones</span>
+    </div>
+  </div>
+
+  <!-- APPROACH 2 — RECOMMENDED -->
+  <div class="approach recommended" data-choice="b" onclick="toggleSelect(this)">
+    <div class="approach-header">
+      <div class="approach-letter" style="background:#059669">2</div>
+      <div class="approach-title-block">
+        <div class="approach-title">API-First Parallel — Fix + API layer → Desktop + Mobile simultaneously <span class="rec-badge">★ Recommended</span></div>
+        <div class="approach-subtitle">Build the shared API + feature layer once, then Desktop and Mobile consume it in parallel</div>
+      </div>
+    </div>
+    <div class="approach-body">
+      <div class="weeks">
+        <div class="week-label">Wk 1–2</div>
+        <div class="week-label">Wk 3–5</div>
+        <div class="week-label">Wk 6–8</div>
+        <div class="week-label">Wk 9–11</div>
+        <div class="week-label">Wk 12–14</div>
+      </div>
+      <div class="swimlanes">
+        <div class="lane">
+          <div class="lane-label">Web fixes</div>
+          <div class="lane-body">
+            <div class="lane-block lane-bg-red" style="flex:2">Fix 2 bugs + .env + listeners</div>
+            <div class="lane-empty" style="flex:3"></div>
+          </div>
+        </div>
+        <div class="lane">
+          <div class="lane-label">API + Features</div>
+          <div class="lane-body">
+            <div class="lane-empty" style="flex:1"></div>
+            <div class="lane-block lane-bg-orange" style="flex:3">Multi-user · Sharing · Quotas · Admin · Full Drive API</div>
+            <div class="lane-empty" style="flex:1"></div>
+          </div>
+        </div>
+        <div class="lane-sep"></div>
+        <div class="lane">
+          <div class="lane-label">NativePHP Desktop</div>
+          <div class="lane-body">
+            <div class="lane-empty" style="flex:2"></div>
+            <div class="lane-block lane-bg-blue" style="flex:3">System tray · Folder watch · Native menus · Auto-import</div>
+          </div>
+        </div>
+        <div class="lane">
+          <div class="lane-label">NativePHP Mobile</div>
+          <div class="lane-body">
+            <div class="lane-empty" style="flex:2"></div>
+            <div class="lane-block lane-bg-purple" style="flex:3">Scrap RN · Camera backup · Background sync · Offline queue</div>
+          </div>
+        </div>
+        <div class="lane-sep"></div>
+        <div class="lane">
+          <div class="lane-label">Integration QA</div>
+          <div class="lane-body">
+            <div class="lane-empty" style="flex:4"></div>
+            <div class="lane-block lane-bg-green" style="flex:1">QA + Ship</div>
+          </div>
+        </div>
+      </div>
+      <div class="details">
+        <div class="detail-col">
+          <h4 style="color:#34d399">Pros</h4>
+          <ul>
+            <li><div class="bullet b-green"></div>Desktop + Mobile built in parallel — saves ~4 weeks</li>
+            <li><div class="bullet b-green"></div>Single API layer shared by web, desktop, and mobile</li>
+            <li><div class="bullet b-green"></div>Bugs fixed in week 1 — nothing blocks production</li>
+            <li><div class="bullet b-green"></div>All apps stay in sync — no diverging logic</li>
+            <li><div class="bullet b-green"></div>New features (multi-user, sharing) built once for all clients</li>
+          </ul>
+        </div>
+        <div class="detail-col">
+          <h4 style="color:#f87171">Cons</h4>
+          <ul>
+            <li><div class="bullet b-yellow"></div>API layer must be solid before clients start — slight dependency</li>
+            <li><div class="bullet b-yellow"></div>Requires parallel coordination on Desktop + Mobile tracks</li>
+          </ul>
+        </div>
+      </div>
+      <span class="tag tag-green">~11–12 weeks total</span><span class="tag tag-green">Parallel efficiency</span><span class="tag tag-blue">One API for all clients</span><span class="tag tag-green">Fastest to ship</span>
+    </div>
+  </div>
+
+  <!-- APPROACH 3 -->
+  <div class="approach" data-choice="c" onclick="toggleSelect(this)">
+    <div class="approach-header">
+      <div class="approach-letter" style="background:#b45309">3</div>
+      <div class="approach-title-block">
+        <div class="approach-title">Mobile-First — Scrap RN immediately, build mobile first</div>
+        <div class="approach-subtitle">NativePHP Mobile is the primary deliverable; desktop and features come after</div>
+      </div>
+    </div>
+    <div class="approach-body">
+      <div class="timeline">
+        <div class="phase ph-red"><div class="phase-label" style="color:#f87171">Week 1</div><div class="phase-name">Fix Bugs</div><div class="phase-detail">Critical web fixes only</div></div>
+        <div class="phase-sep"></div>
+        <div class="phase ph-purple"><div class="phase-label" style="color:#a78bfa">Week 2–7</div><div class="phase-name">NativePHP Mobile</div><div class="phase-detail">Full mobile app first — camera backup, auto-sync, gallery</div></div>
+        <div class="phase-sep"></div>
+        <div class="phase ph-orange"><div class="phase-label" style="color:#f97316">Week 8–10</div><div class="phase-name">New Features</div><div class="phase-detail">Multi-user, sharing, quotas after mobile ships</div></div>
+        <div class="phase-sep"></div>
+        <div class="phase ph-blue"><div class="phase-label" style="color:#60a5fa">Week 11–14</div><div class="phase-name">Desktop</div><div class="phase-detail">NativePHP Desktop last</div></div>
+      </div>
+      <div class="details">
+        <div class="detail-col">
+          <h4 style="color:#34d399">Pros</h4>
+          <ul>
+            <li><div class="bullet b-green"></div>React Native scrapped fastest — mobile app ships first</li>
+            <li><div class="bullet b-green"></div>Good if mobile is the priority use case</li>
+          </ul>
+        </div>
+        <div class="detail-col">
+          <h4 style="color:#f87171">Cons</h4>
+          <ul>
+            <li><div class="bullet b-red"></div>NativePHP Mobile is early access — highest risk first</li>
+            <li><div class="bullet b-red"></div>API built for mobile may need rework for desktop later</li>
+            <li><div class="bullet b-red"></div>New features delayed until after mobile ships</li>
+            <li><div class="bullet b-red"></div>Desktop is last — 14 weeks</li>
+          </ul>
+        </div>
+      </div>
+      <span class="tag tag-blue">14 weeks total</span><span class="tag tag-red">Highest risk</span><span class="tag tag-yellow">Mobile-first priority</span>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:1.5rem;background:rgba(5,150,105,.08);border:1px solid rgba(52,211,153,.25);border-radius:10px;padding:1rem;font-size:.83rem;color:#8892b0;line-height:1.6">
+  <strong style="color:#34d399">★ Why Approach 2:</strong> Fixing the 2 critical bugs takes days — unblocks production immediately. Building the shared API layer (multi-user, sharing, quotas) once means Desktop and Mobile both get these features for free when they launch. The parallel tracks save ~4 weeks vs sequential. NativePHP Desktop is lower risk (wraps existing web UI) and can run alongside Mobile development.
+</div>
+</body>
+</html>

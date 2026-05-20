@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Navigation Layout</title>
+<script src="/helper.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0f1117;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;padding:2rem;font-size:14px}
+  h2{font-size:1.4rem;font-weight:700;color:#c7d2fe;margin-bottom:.4rem}
+  .subtitle{color:#8892b0;margin-bottom:1.5rem;font-size:.92rem}
+  .layouts{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem}
+  .layout-card{background:#1a1d27;border:2px solid #2e3250;border-radius:14px;padding:1rem;cursor:pointer;transition:all .2s}
+  .layout-card:hover{border-color:#7c6af7;transform:translateY(-2px)}
+  .layout-card.selected{border-color:#7c6af7;background:#1e1b4b}
+  .layout-card h3{font-size:.9rem;font-weight:700;color:#e2e8f0;margin-bottom:.3rem}
+  .layout-card .desc{font-size:.78rem;color:#8892b0;margin-bottom:.9rem;line-height:1.5}
+  /* Mockup styles */
+  .phone-frame{width:100%;max-width:160px;margin:0 auto 0.75rem;display:block}
+  .phone{background:#111827;border-radius:20px;border:2px solid #374151;overflow:hidden;aspect-ratio:9/19;display:flex;flex-direction:column;position:relative}
+  .phone-status{height:16px;background:#1f2937;display:flex;align-items:center;justify-content:center;font-size:8px;color:#6b7280}
+  .phone-body{flex:1;display:flex;flex-direction:column;overflow:hidden}
+  /* Option A - Photos First (Google Photos style) */
+  .phone-a .tab-bar{height:44px;background:#1f2937;border-top:1px solid #374151;display:flex;align-items:center;justify-content:space-around;padding:0 4px}
+  .tab-item{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1}
+  .tab-icon{width:16px;height:16px;border-radius:50%;background:#374151}
+  .tab-icon.active{background:#818cf8}
+  .tab-label{font-size:6px;color:#9ca3af}
+  .tab-label.active{color:#818cf8}
+  .photo-grid{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#111827;overflow:hidden}
+  .photo-cell{background:#1e2530;aspect-ratio:1}
+  .photo-cell.big{grid-column:span 2;grid-row:span 2;background:#263040}
+  .photo-date-header{padding:4px 6px;font-size:7px;color:#9ca3af;background:#111827;font-weight:600}
+  /* Option B - Drive First (file manager style) */
+  .sidebar{width:60px;background:#1f2937;border-right:1px solid #374151;display:flex;flex-direction:column;padding:6px 0;gap:4px}
+  .side-item{padding:4px;display:flex;flex-direction:column;align-items:center;gap:2px}
+  .side-icon{width:20px;height:20px;border-radius:6px;background:#374151}
+  .side-icon.active{background:#818cf8}
+  .side-label{font-size:5px;color:#9ca3af;text-align:center}
+  .drive-content{flex:1;padding:6px;overflow:hidden}
+  .drive-row{display:flex;align-items:center;gap:4px;padding:3px 4px;border-radius:4px;margin-bottom:2px}
+  .drive-row:nth-child(odd){background:#1f2937}
+  .file-icon{width:14px;height:14px;border-radius:3px;background:#374151;flex-shrink:0}
+  .file-icon.folder{background:#4b5563}
+  .file-icon.img{background:#3b82f6}
+  .file-icon.vid{background:#ef4444}
+  .file-name{font-size:7px;color:#d1d5db;flex:1;overflow:hidden}
+  .file-meta{font-size:6px;color:#6b7280}
+  /* Option C - Combined (like Google One / unified) */
+  .combined-header{height:32px;background:#1f2937;border-bottom:1px solid #374151;display:flex;align-items:center;padding:0 8px;gap:4px}
+  .header-logo{width:14px;height:14px;border-radius:50%;background:linear-gradient(135deg,#818cf8,#34d399)}
+  .header-title{font-size:8px;color:#e2e8f0;font-weight:600}
+  .header-search{flex:1;height:14px;background:#374151;border-radius:4px;margin:0 4px}
+  .header-avatar{width:14px;height:14px;border-radius:50%;background:#4b5563}
+  .bottom-tabs-combined{height:44px;background:#1f2937;border-top:1px solid #374151;display:flex;align-items:center;justify-content:space-around}
+  .btab{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;padding:4px 0}
+  .btab-icon{font-size:12px;line-height:1}
+  .btab-label{font-size:6px;color:#9ca3af}
+  .btab-label.active{color:#818cf8}
+  .btab-pip{width:20px;height:2px;border-radius:999px;background:#818cf8;margin-bottom:2px}
+  .combined-body{flex:1;display:flex;flex-direction:column;overflow:hidden}
+  .combined-stories{height:40px;background:#111827;border-bottom:1px solid #1f2937;display:flex;align-items:center;gap:4px;padding:0 6px;overflow:hidden}
+  .story-circle{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed);flex-shrink:0;border:1.5px solid #818cf8}
+  .combined-grid{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:1px;overflow:hidden;background:#0f1117}
+  .cgrid-cell{background:#1e2530}
+  .cgrid-cell.span2{grid-column:span 2;background:#263040}
+  /* Labels */
+  .tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.72rem;font-weight:600;margin-right:4px}
+  .tag-green{background:rgba(52,211,153,.15);color:#34d399}
+  .tag-yellow{background:rgba(251,191,36,.12);color:#fbbf24}
+  .tag-blue{background:rgba(96,165,250,.15);color:#60a5fa}
+  .tag-red{background:rgba(248,113,113,.15);color:#f87171}
+  .tag-purple{background:rgba(124,106,247,.15);color:#a78bfa}
+
+  /* Desktop mini mockup */
+  .desktop-mini{background:#111827;border-radius:8px;border:1px solid #374151;overflow:hidden;margin-top:6px}
+  .desktop-titlebar{height:16px;background:#1f2937;display:flex;align-items:center;gap:3px;padding:0 6px}
+  .tbar-dot{width:5px;height:5px;border-radius:50%}
+  .desktop-body{display:flex;height:60px}
+  .desktop-sidebar{width:45px;background:#1a1d27;border-right:1px solid #374151;padding:4px 3px;display:flex;flex-direction:column;gap:3px}
+  .ds-item{height:14px;border-radius:3px;background:#2d3148;width:100%}
+  .ds-item.active{background:#4f46e5}
+  .desktop-main{flex:1;display:grid;grid-template-columns:repeat(6,1fr);gap:1px;padding:2px}
+  .dm-cell{background:#1e2530;border-radius:2px}
+</style>
+</head>
+<body>
+<h2>Navigation Layout — Which app structure fits best?</h2>
+<p class="subtitle">Defines how users move between Photos, Drive files, Search, and Settings on both mobile and desktop</p>
+
+<div class="layouts">
+
+  <!-- Option A -->
+  <div class="layout-card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="phone-frame">
+      <div class="phone phone-a">
+        <div class="phone-status">9:41</div>
+        <div class="phone-body">
+          <div class="photo-date-header">Today — 24 photos</div>
+          <div class="photo-grid">
+            <div class="photo-cell big"></div>
+            <div class="photo-cell"></div>
+            <div class="photo-cell"></div>
+            <div class="photo-cell"></div>
+            <div class="photo-cell"></div>
+            <div class="photo-cell"></div>
+            <div class="photo-cell"></div>
+          </div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab-item"><div class="tab-icon active"></div><div class="tab-label active">Photos</div></div>
+          <div class="tab-item"><div class="tab-icon"></div><div class="tab-label">Search</div></div>
+          <div class="tab-item"><div class="tab-icon"></div><div class="tab-label">Albums</div></div>
+          <div class="tab-item"><div class="tab-icon"></div><div class="tab-label">Files</div></div>
+          <div class="tab-item"><div class="tab-icon"></div><div class="tab-label">More</div></div>
+        </div>
+      </div>
+    </div>
+    <h3>A — Photos-First (Google Photos style)</h3>
+    <p class="desc">Chronological photo grid as home screen. Bottom tabs: Photos, Search, Albums, Files (Drive), More. Drive/Files is a secondary tab.</p>
+    <div><span class="tag tag-green">Familiar to Google Photos users</span><span class="tag tag-blue">Best for photo-heavy use</span></div>
+  </div>
+
+  <!-- Option B -->
+  <div class="layout-card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="phone-frame">
+      <div class="phone">
+        <div class="phone-status">9:41</div>
+        <div class="phone-body" style="display:flex;flex-direction:row;flex:1">
+          <div class="sidebar">
+            <div class="side-item"><div class="side-icon active"></div><div class="side-label">Home</div></div>
+            <div class="side-item"><div class="side-icon"></div><div class="side-label">Photos</div></div>
+            <div class="side-item"><div class="side-icon"></div><div class="side-label">Files</div></div>
+            <div class="side-item"><div class="side-icon"></div><div class="side-label">Shared</div></div>
+            <div class="side-item"><div class="side-icon"></div><div class="side-label">Trash</div></div>
+          </div>
+          <div class="drive-content">
+            <div style="font-size:7px;color:#9ca3af;margin-bottom:4px;font-weight:600">My Drive</div>
+            <div class="drive-row"><div class="file-icon folder"></div><div class="file-name">Camera Roll</div><div class="file-meta">1.2 GB</div></div>
+            <div class="drive-row"><div class="file-icon folder"></div><div class="file-name">Documents</div><div class="file-meta">340 MB</div></div>
+            <div class="drive-row"><div class="file-icon img"></div><div class="file-name">IMG_2048.jpg</div><div class="file-meta">4.2 MB</div></div>
+            <div class="drive-row"><div class="file-icon vid"></div><div class="file-name">Video_001.mp4</div><div class="file-meta">120 MB</div></div>
+            <div class="drive-row"><div class="file-icon img"></div><div class="file-name">Screenshot.png</div><div class="file-meta">1.1 MB</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <h3>B — Drive-First (File Manager style)</h3>
+    <p class="desc">Persistent left sidebar with folder tree. Files and folders as primary view. Photos section is a smart folder. Better for document/file heavy workflows.</p>
+    <div><span class="tag tag-blue">Familiar to Drive users</span><span class="tag tag-yellow">Best for file management</span></div>
+  </div>
+
+  <!-- Option C -->
+  <div class="layout-card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="phone-frame">
+      <div class="phone">
+        <div class="phone-status">9:41</div>
+        <div class="phone-body combined-body">
+          <div class="combined-header">
+            <div class="header-logo"></div>
+            <div class="header-title">Avinash EYE</div>
+            <div class="header-search"></div>
+            <div class="header-avatar"></div>
+          </div>
+          <div class="combined-stories">
+            <div class="story-circle"></div>
+            <div class="story-circle" style="background:linear-gradient(135deg,#059669,#10b981)"></div>
+            <div class="story-circle" style="background:linear-gradient(135deg,#dc2626,#f97316)"></div>
+            <div class="story-circle" style="background:linear-gradient(135deg,#7c3aed,#4f46e5)"></div>
+          </div>
+          <div class="combined-grid">
+            <div class="cgrid-cell span2"></div>
+            <div class="cgrid-cell"></div>
+            <div class="cgrid-cell"></div>
+            <div class="cgrid-cell"></div>
+            <div class="cgrid-cell span2"></div>
+            <div class="cgrid-cell"></div>
+            <div class="cgrid-cell"></div>
+          </div>
+        </div>
+        <div class="bottom-tabs-combined">
+          <div class="btab"><div class="btab-pip"></div><div class="btab-icon">🖼</div><div class="btab-label active">Photos</div></div>
+          <div class="btab"><div class="btab-icon">🔍</div><div class="btab-label">Search</div></div>
+          <div class="btab"><div class="btab-icon">📁</div><div class="btab-label">Files</div></div>
+          <div class="btab"><div class="btab-icon">👤</div><div class="btab-label">People</div></div>
+          <div class="btab"><div class="btab-icon">⚙️</div><div class="btab-label">More</div></div>
+        </div>
+      </div>
+    </div>
+    <h3>C — Unified Hub (Google One style)</h3>
+    <p class="desc">Smart home feed with memories/highlights strip. Bottom nav: Photos, Search, Files, People, More. Both Photos and Drive live as equal peers with a unified search across everything.</p>
+    <div><span class="tag tag-purple">Best Google Photos+Drive parity</span><span class="tag tag-green">Unified search</span></div>
+
+    <div class="desktop-mini">
+      <div class="desktop-titlebar">
+        <div class="tbar-dot" style="background:#ef4444"></div>
+        <div class="tbar-dot" style="background:#f59e0b"></div>
+        <div class="tbar-dot" style="background:#10b981"></div>
+      </div>
+      <div class="desktop-body">
+        <div class="desktop-sidebar">
+          <div class="ds-item active"></div>
+          <div class="ds-item"></div>
+          <div class="ds-item"></div>
+          <div class="ds-item"></div>
+          <div class="ds-item"></div>
+        </div>
+        <div class="desktop-main">
+          <div class="dm-cell"></div><div class="dm-cell"></div><div class="dm-cell"></div>
+          <div class="dm-cell"></div><div class="dm-cell"></div><div class="dm-cell"></div>
+          <div class="dm-cell"></div><div class="dm-cell"></div><div class="dm-cell"></div>
+          <div class="dm-cell"></div><div class="dm-cell"></div><div class="dm-cell"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:1.5rem;background:rgba(46,50,80,0.4);border:1px solid #2e3250;border-radius:10px;padding:1rem;font-size:.83rem;color:#8892b0;">
+  <strong style="color:#c7d2fe">Desktop note:</strong> On desktop (NativePHP/Electron), the mobile bottom tabs become a left sidebar. Options A and C both map naturally to a sidebar layout for desktop.
+</div>
+</body>
+</html>

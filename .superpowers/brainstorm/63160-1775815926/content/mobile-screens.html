@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Mobile Screens</title>
+<script src="/helper.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f1117;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;padding:1.75rem;font-size:13px}
+h2{font-size:1.3rem;font-weight:700;color:#c7d2fe;margin-bottom:.25rem}
+.subtitle{color:#8892b0;margin-bottom:1.5rem;font-size:.88rem}
+
+/* Phone grid */
+.phones{display:flex;gap:1.25rem;flex-wrap:wrap;justify-content:center}
+.phone-wrap{display:flex;flex-direction:column;align-items:center;gap:.65rem;flex:0 0 160px}
+.phone-label{font-size:.78rem;font-weight:700;color:#c7d2fe;text-align:center}
+.phone-desc{font-size:.7rem;color:#6b7280;text-align:center;line-height:1.4;max-width:155px}
+
+/* Phone shell */
+.phone{width:155px;height:310px;background:#111827;border-radius:28px;border:2px solid #374151;overflow:hidden;display:flex;flex-direction:column;position:relative;box-shadow:0 20px 40px rgba(0,0,0,.5)}
+.status-bar{height:18px;background:#1f2937;display:flex;align-items:center;justify-content:space-between;padding:0 10px;flex-shrink:0}
+.status-time{font-size:7px;font-weight:700;color:#e2e8f0}
+.status-icons{display:flex;gap:3px;align-items:center}
+.status-icon{width:8px;height:5px;background:#e2e8f0;border-radius:1px}
+.screen-body{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.bottom-bar{height:44px;background:#1f2937;border-top:1px solid #374151;display:flex;align-items:center;justify-content:space-around;flex-shrink:0}
+.tab{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;padding:3px 0;cursor:default}
+.tab-icon{font-size:11px;line-height:1}
+.tab-label{font-size:5.5px;color:#6b7280}
+.tab-label.active{color:#818cf8}
+.tab-pip{width:18px;height:2px;border-radius:999px;background:#818cf8;margin-bottom:1px}
+
+/* ── TAB 1: PHOTOS ── */
+.photos-header{height:32px;background:#1f2937;display:flex;align-items:center;justify-content:space-between;padding:0 9px;flex-shrink:0}
+.ph-title{font-size:9px;font-weight:800;color:#e2e8f0}
+.ph-icons{display:flex;gap:5px}
+.ph-icon{width:14px;height:14px;background:#374151;border-radius:50%}
+
+.memories-strip{height:52px;background:#111827;border-bottom:1px solid #1f2937;display:flex;align-items:center;gap:4px;padding:0 7px;overflow:hidden;flex-shrink:0}
+.memory-card{width:40px;height:42px;border-radius:8px;flex-shrink:0;position:relative;overflow:hidden}
+.mc1{background:linear-gradient(135deg,#1e3a5f,#2d6a9f)}
+.mc2{background:linear-gradient(135deg,#3d1a5c,#7c3aed)}
+.mc3{background:linear-gradient(135deg,#1a3d2b,#059669)}
+.mc4{background:linear-gradient(135deg,#4a1a1a,#dc2626)}
+.memory-card .mc-label{position:absolute;bottom:3px;left:3px;right:3px;font-size:5px;color:rgba(255,255,255,.9);font-weight:700;line-height:1.2;text-shadow:0 1px 2px rgba(0,0,0,.8)}
+
+.date-header{padding:4px 7px;font-size:6.5px;color:#9ca3af;font-weight:700;background:#111827}
+.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5px;background:#0f1117}
+.pc{background:#1e2530;aspect-ratio:1;position:relative}
+.pc.big{grid-column:span 2;grid-row:span 2;background:#263040}
+.pc.sel::after{content:'✓';position:absolute;top:3px;right:3px;width:11px;height:11px;background:#818cf8;border-radius:50%;font-size:6px;display:flex;align-items:center;justify-content:center;color:#fff}
+/* subtle photo content simulation */
+.pc::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.03),transparent)}
+.pc.v1{background:linear-gradient(135deg,#1a2a3a,#1e3a5f)}
+.pc.v2{background:linear-gradient(135deg,#2d1a3a,#3d2060)}
+.pc.v3{background:linear-gradient(135deg,#1a3a2a,#1a5040)}
+.pc.v4{background:linear-gradient(135deg,#3a2a1a,#5a3a10)}
+.pc.v5{background:linear-gradient(135deg,#1a2a1a,#2a4a2a)}
+.pc.v6{background:linear-gradient(135deg,#2a1a2a,#4a1a4a)}
+.pc.v7{background:linear-gradient(135deg,#1a1a3a,#2a2a6a)}
+
+/* ── TAB 2: SEARCH ── */
+.search-bar-row{height:32px;background:#1f2937;display:flex;align-items:center;padding:0 7px;gap:5px;flex-shrink:0}
+.search-bar{flex:1;height:20px;background:#374151;border-radius:10px;display:flex;align-items:center;padding:0 7px;gap:4px}
+.search-icon{width:9px;height:9px;border-radius:50%;border:1.5px solid #9ca3af;flex-shrink:0}
+.search-placeholder{font-size:6.5px;color:#9ca3af}
+
+.category-row{height:36px;display:flex;align-items:center;gap:5px;padding:0 7px;overflow:hidden;flex-shrink:0}
+.cat-chip{padding:3px 9px;background:#1f2937;border-radius:999px;font-size:6px;color:#9ca3af;white-space:nowrap;flex-shrink:0}
+.cat-chip.active{background:rgba(129,140,248,.2);color:#818cf8;border:1px solid rgba(129,140,248,.4)}
+
+.search-section-title{padding:4px 7px;font-size:6.5px;color:#6b7280;font-weight:700}
+.search-results{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;padding:5px 7px;overflow:hidden}
+.sr-card{background:#1f2937;border-radius:7px;overflow:hidden}
+.sr-img{height:40px;background:linear-gradient(135deg,#1e3a5f,#2d6a9f)}
+.sr-img.g2{background:linear-gradient(135deg,#3d1a5c,#7c3aed)}
+.sr-img.g3{background:linear-gradient(135deg,#1a3d2b,#059669)}
+.sr-img.g4{background:linear-gradient(135deg,#4a2a1a,#c2410c)}
+.sr-label{padding:3px 5px;font-size:6px;color:#e2e8f0;font-weight:600}
+.sr-meta{padding:0 5px 3px;font-size:5.5px;color:#6b7280}
+
+/* People face chips */
+.people-row{display:flex;gap:5px;padding:5px 7px;overflow:hidden;flex-shrink:0}
+.person-chip{display:flex;flex-direction:column;align-items:center;gap:2px}
+.person-face{width:28px;height:28px;border-radius:50%;border:2px solid #374151}
+.pf1{background:linear-gradient(135deg,#4f46e5,#7c3aed)}
+.pf2{background:linear-gradient(135deg,#059669,#0d9488)}
+.pf3{background:linear-gradient(135deg,#dc2626,#ea580c)}
+.pf4{background:linear-gradient(135deg,#d97706,#ca8a04)}
+.pf5{background:linear-gradient(135deg,#7c3aed,#c026d3)}
+.person-name{font-size:5px;color:#9ca3af}
+
+/* ── TAB 3: FILES ── */
+.files-header{height:32px;background:#1f2937;display:flex;align-items:center;justify-content:space-between;padding:0 9px;flex-shrink:0}
+.fh-title{font-size:9px;font-weight:800;color:#e2e8f0}
+.fh-actions{display:flex;gap:4px}
+.fh-btn{width:14px;height:14px;background:#374151;border-radius:3px}
+
+.filter-row{height:28px;display:flex;align-items:center;gap:4px;padding:0 7px;border-bottom:1px solid #1f2937;flex-shrink:0;overflow:hidden}
+.fchip{padding:2px 7px;border-radius:999px;font-size:5.5px;white-space:nowrap;flex-shrink:0}
+.fchip.active{background:rgba(129,140,248,.2);color:#818cf8}
+.fchip.inactive{background:#1f2937;color:#6b7280}
+
+.files-list{flex:1;overflow:hidden;padding:4px 0}
+.fitem{display:flex;align-items:center;gap:6px;padding:5px 9px}
+.fitem-icon{width:24px;height:24px;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px}
+.fi-folder{background:rgba(75,85,99,.4);color:#9ca3af}
+.fi-img{background:rgba(59,130,246,.2);color:#60a5fa}
+.fi-vid{background:rgba(239,68,68,.2);color:#f87171}
+.fi-pdf{background:rgba(220,38,38,.2);color:#f87171}
+.fi-zip{background:rgba(107,114,128,.2);color:#9ca3af}
+.fi-audio{background:rgba(168,85,247,.2);color:#c084fc}
+.fitem-info{flex:1;overflow:hidden}
+.fitem-name{font-size:7px;color:#e2e8f0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fitem-meta{font-size:5.5px;color:#6b7280;margin-top:1px}
+.fitem-more{width:12px;height:12px;background:#1f2937;border-radius:50%;flex-shrink:0}
+
+/* ── TAB 4: PEOPLE ── */
+.people-header{height:32px;background:#1f2937;display:flex;align-items:center;padding:0 9px;flex-shrink:0}
+.ppl-title{font-size:9px;font-weight:800;color:#e2e8f0}
+
+.people-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:8px;overflow:hidden;flex:1}
+.person-card{background:#1f2937;border-radius:10px;overflow:hidden;display:flex;flex-direction:column;align-items:center;padding:6px 4px 5px}
+.person-avatar{width:36px;height:36px;border-radius:50%;margin-bottom:3px}
+.pa1{background:linear-gradient(135deg,#4f46e5,#7c3aed)}
+.pa2{background:linear-gradient(135deg,#059669,#0d9488)}
+.pa3{background:linear-gradient(135deg,#dc2626,#ea580c)}
+.pa4{background:linear-gradient(135deg,#d97706,#ca8a04)}
+.pa5{background:linear-gradient(135deg,#0891b2,#0e7490)}
+.pa6{background:linear-gradient(135deg,#7c3aed,#c026d3)}
+.person-card-name{font-size:6px;color:#e2e8f0;font-weight:700;text-align:center}
+.person-card-count{font-size:5.5px;color:#6b7280;text-align:center}
+
+/* ── TAB 5: MORE ── */
+.more-header{height:32px;background:#1f2937;display:flex;align-items:center;padding:0 9px;flex-shrink:0}
+.more-title{font-size:9px;font-weight:800;color:#e2e8f0}
+
+.user-card{margin:7px;background:#1f2937;border-radius:8px;padding:7px 8px;display:flex;align-items:center;gap:7px}
+.user-ava{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed)}
+.user-info{flex:1}
+.user-name{font-size:7px;color:#e2e8f0;font-weight:700}
+.user-email{font-size:5.5px;color:#6b7280}
+.user-quota{width:100%;height:3px;background:#374151;border-radius:999px;margin-top:3px;overflow:hidden}
+.user-quota-fill{height:100%;background:linear-gradient(90deg,#818cf8,#34d399);border-radius:999px;width:42%}
+.user-quota-text{font-size:5px;color:#6b7280;margin-top:2px}
+
+.more-list{flex:1;overflow:hidden}
+.more-item{display:flex;align-items:center;gap:7px;padding:6px 9px;border-bottom:1px solid rgba(55,65,81,.4)}
+.more-item:last-child{border-bottom:none}
+.mi-icon{width:20px;height:20px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0}
+.mi-text{flex:1;font-size:7px;color:#e2e8f0;font-weight:600}
+.mi-meta{font-size:5.5px;color:#6b7280}
+.mi-arrow{font-size:7px;color:#374151}
+
+/* Sync status badge */
+.sync-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:#34d399;margin-right:3px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+</style>
+</head>
+<body>
+<h2>NativePHP Mobile — All 5 Screens</h2>
+<p class="subtitle">Photos-First navigation · Google Photos + Drive aesthetic · NativePHP Mobile (Capacitor)</p>
+
+<div class="phones">
+
+  <!-- PHOTOS TAB -->
+  <div class="phone-wrap">
+    <div class="phone-label">📸 Photos</div>
+    <div class="phone">
+      <div class="status-bar"><span class="status-time">9:41</span><div class="status-icons"><div class="status-icon"></div><div class="status-icon"></div><div class="status-icon" style="width:12px;height:5px;border-radius:2px"></div></div></div>
+      <div class="screen-body">
+        <div class="photos-header"><span class="ph-title">Photos</span><div class="ph-icons"><div class="ph-icon"></div><div class="ph-icon"></div></div></div>
+        <div class="memories-strip">
+          <div class="memory-card mc1"><div class="mc-label">Goa Trip<br>Mar 2025</div></div>
+          <div class="memory-card mc2"><div class="mc-label">Birthday<br>Feb 2025</div></div>
+          <div class="memory-card mc3"><div class="mc-label">Hiking<br>Jan 2025</div></div>
+          <div class="memory-card mc4"><div class="mc-label">Christmas<br>Dec 2024</div></div>
+        </div>
+        <div class="date-header">TODAY — 12 PHOTOS</div>
+        <div class="photo-grid">
+          <div class="pc big v1"></div>
+          <div class="pc v2"></div>
+          <div class="pc v3 sel"></div>
+          <div class="pc v4"></div>
+          <div class="pc v5"></div>
+          <div class="pc v6"></div>
+          <div class="pc v7"></div>
+        </div>
+        <div class="date-header">YESTERDAY — 8 PHOTOS</div>
+        <div class="photo-grid">
+          <div class="pc v3"></div><div class="pc v5"></div><div class="pc v2"></div>
+        </div>
+      </div>
+      <div class="bottom-bar">
+        <div class="tab"><div class="tab-pip"></div><div class="tab-icon">🖼</div><div class="tab-label active">Photos</div></div>
+        <div class="tab"><div class="tab-icon">🔍</div><div class="tab-label">Search</div></div>
+        <div class="tab"><div class="tab-icon">📁</div><div class="tab-label">Files</div></div>
+        <div class="tab"><div class="tab-icon">👥</div><div class="tab-label">People</div></div>
+        <div class="tab"><div class="tab-icon">☰</div><div class="tab-label">More</div></div>
+      </div>
+    </div>
+    <div class="phone-desc">Memories strip + chronological grid. Select mode for batch actions. Backed-up badge on each photo.</div>
+  </div>
+
+  <!-- SEARCH TAB -->
+  <div class="phone-wrap">
+    <div class="phone-label">🔍 Search</div>
+    <div class="phone">
+      <div class="status-bar"><span class="status-time">9:41</span><div class="status-icons"><div class="status-icon"></div><div class="status-icon"></div><div class="status-icon" style="width:12px;height:5px;border-radius:2px"></div></div></div>
+      <div class="screen-body">
+        <div class="search-bar-row">
+          <div class="search-bar"><div class="search-icon"></div><span class="search-placeholder">Search photos, files, people…</span></div>
+        </div>
+        <div class="category-row">
+          <div class="cat-chip active">All</div>
+          <div class="cat-chip">Photos</div>
+          <div class="cat-chip">Videos</div>
+          <div class="cat-chip">Docs</div>
+          <div class="cat-chip">People</div>
+        </div>
+        <!-- People strip -->
+        <div style="padding:5px 7px 2px;font-size:6px;color:#6b7280;font-weight:700">PEOPLE</div>
+        <div class="people-row">
+          <div class="person-chip"><div class="person-face pf1"></div><div class="person-name">Avinash</div></div>
+          <div class="person-chip"><div class="person-face pf2"></div><div class="person-name">Priya</div></div>
+          <div class="person-chip"><div class="person-face pf3"></div><div class="person-name">Ravi</div></div>
+          <div class="person-chip"><div class="person-face pf4"></div><div class="person-name">Meera</div></div>
+          <div class="person-chip"><div class="person-face pf5"></div><div class="person-name">Buddy</div></div>
+        </div>
+        <!-- Albums grid -->
+        <div class="search-section-title">SMART ALBUMS</div>
+        <div class="search-results">
+          <div class="sr-card"><div class="sr-img"></div><div class="sr-label">Goa Trip</div><div class="sr-meta">47 photos · Mar 2025</div></div>
+          <div class="sr-card"><div class="sr-img g2"></div><div class="sr-label">Sunsets</div><div class="sr-meta">23 photos</div></div>
+          <div class="sr-card"><div class="sr-img g3"></div><div class="sr-label">Food</div><div class="sr-meta">89 photos</div></div>
+          <div class="sr-card"><div class="sr-img g4"></div><div class="sr-label">Pets</div><div class="sr-meta">34 photos</div></div>
+        </div>
+      </div>
+      <div class="bottom-bar">
+        <div class="tab"><div class="tab-icon">🖼</div><div class="tab-label">Photos</div></div>
+        <div class="tab"><div class="tab-pip"></div><div class="tab-icon">🔍</div><div class="tab-label active">Search</div></div>
+        <div class="tab"><div class="tab-icon">📁</div><div class="tab-label">Files</div></div>
+        <div class="tab"><div class="tab-icon">👥</div><div class="tab-label">People</div></div>
+        <div class="tab"><div class="tab-icon">☰</div><div class="tab-label">More</div></div>
+      </div>
+    </div>
+    <div class="phone-desc">Unified search across photos + files + people. AI semantic search ("beach sunset") + face search + filename.</div>
+  </div>
+
+  <!-- FILES TAB -->
+  <div class="phone-wrap">
+    <div class="phone-label">📁 Files</div>
+    <div class="phone">
+      <div class="status-bar"><span class="status-time">9:41</span><div class="status-icons"><div class="status-icon"></div><div class="status-icon"></div><div class="status-icon" style="width:12px;height:5px;border-radius:2px"></div></div></div>
+      <div class="screen-body">
+        <div class="files-header"><span class="fh-title">Files</span><div class="fh-actions"><div class="fh-btn"></div><div class="fh-btn"></div></div></div>
+        <div class="filter-row">
+          <div class="fchip active">All</div>
+          <div class="fchip inactive">Photos</div>
+          <div class="fchip inactive">Videos</div>
+          <div class="fchip inactive">Docs</div>
+          <div class="fchip inactive">Audio</div>
+          <div class="fchip inactive">Archives</div>
+        </div>
+        <div class="files-list">
+          <div class="fitem"><div class="fitem-icon fi-folder">📂</div><div class="fitem-info"><div class="fitem-name">Camera Roll</div><div class="fitem-meta">1,284 items · 12.4 GB</div></div><div class="fitem-more"></div></div>
+          <div class="fitem"><div class="fitem-icon fi-folder">📂</div><div class="fitem-info"><div class="fitem-name">Documents</div><div class="fitem-meta">47 items · 340 MB</div></div><div class="fitem-more"></div></div>
+          <div class="fitem"><div class="fitem-icon fi-img">🖼</div><div class="fitem-info"><div class="fitem-name">Screenshot_2025.png</div><div class="fitem-meta">1.2 MB · Today</div></div><div class="fitem-more"></div></div>
+          <div class="fitem"><div class="fitem-icon fi-vid">🎬</div><div class="fitem-info"><div class="fitem-name">Birthday_video.mp4</div><div class="fitem-meta">220 MB · Feb 2025</div></div><div class="fitem-more"></div></div>
+          <div class="fitem"><div class="fitem-icon fi-pdf">📄</div><div class="fitem-info"><div class="fitem-name">Invoice_Mar.pdf</div><div class="fitem-meta">340 KB · Mar 2025</div></div><div class="fitem-more"></div></div>
+          <div class="fitem"><div class="fitem-icon fi-audio">🎵</div><div class="fitem-info"><div class="fitem-name">Voice_memo_001.m4a</div><div class="fitem-meta">8.7 MB · Yesterday</div></div><div class="fitem-more"></div></div>
+          <div class="fitem"><div class="fitem-icon fi-zip">🗜</div><div class="fitem-info"><div class="fitem-name">Backup_2024.zip</div><div class="fitem-meta">2.1 GB · Dec 2024</div></div><div class="fitem-more"></div></div>
+        </div>
+      </div>
+      <div class="bottom-bar">
+        <div class="tab"><div class="tab-icon">🖼</div><div class="tab-label">Photos</div></div>
+        <div class="tab"><div class="tab-icon">🔍</div><div class="tab-label">Search</div></div>
+        <div class="tab"><div class="tab-pip"></div><div class="tab-icon">📁</div><div class="tab-label active">Files</div></div>
+        <div class="tab"><div class="tab-icon">👥</div><div class="tab-label">People</div></div>
+        <div class="tab"><div class="tab-icon">☰</div><div class="tab-label">More</div></div>
+      </div>
+    </div>
+    <div class="phone-desc">Any file type. Type filter chips. Long-press for share link, move, rename, delete. Folder navigation with breadcrumb.</div>
+  </div>
+
+  <!-- PEOPLE TAB -->
+  <div class="phone-wrap">
+    <div class="phone-label">👥 People</div>
+    <div class="phone">
+      <div class="status-bar"><span class="status-time">9:41</span><div class="status-icons"><div class="status-icon"></div><div class="status-icon"></div><div class="status-icon" style="width:12px;height:5px;border-radius:2px"></div></div></div>
+      <div class="screen-body">
+        <div class="people-header"><span class="ppl-title">People & Pets</span></div>
+        <div style="padding:4px 8px 2px;font-size:6px;color:#6b7280;font-weight:700">6 PEOPLE IDENTIFIED BY AI</div>
+        <div class="people-grid">
+          <div class="person-card"><div class="person-avatar pa1"></div><div class="person-card-name">Avinash</div><div class="person-card-count">847 photos</div></div>
+          <div class="person-card"><div class="person-avatar pa2"></div><div class="person-card-name">Priya</div><div class="person-card-count">312 photos</div></div>
+          <div class="person-card"><div class="person-avatar pa3"></div><div class="person-card-name">Ravi</div><div class="person-card-count">198 photos</div></div>
+          <div class="person-card"><div class="person-avatar pa4"></div><div class="person-card-name">Meera</div><div class="person-card-count">156 photos</div></div>
+          <div class="person-card"><div class="person-avatar pa5"></div><div class="person-card-name">Rahul</div><div class="person-card-count">89 photos</div></div>
+          <div class="person-card"><div class="person-avatar pa6" style="background:linear-gradient(135deg,#92400e,#ca8a04)"></div><div class="person-card-name">Buddy 🐶</div><div class="person-card-count">234 photos</div></div>
+        </div>
+        <div style="padding:4px 8px 2px;font-size:6px;color:#6b7280;font-weight:700;margin-top:2px">2 UNNAMED — TAP TO NAME</div>
+        <div class="people-grid" style="grid-template-columns:repeat(3,1fr)">
+          <div class="person-card" style="border:1px dashed #374151"><div class="person-avatar" style="background:#374151;width:36px;height:36px;border-radius:50%"></div><div class="person-card-name" style="color:#6b7280">Unknown</div><div class="person-card-count">12 photos</div></div>
+          <div class="person-card" style="border:1px dashed #374151"><div class="person-avatar" style="background:#374151;width:36px;height:36px;border-radius:50%"></div><div class="person-card-name" style="color:#6b7280">Unknown</div><div class="person-card-count">7 photos</div></div>
+        </div>
+      </div>
+      <div class="bottom-bar">
+        <div class="tab"><div class="tab-icon">🖼</div><div class="tab-label">Photos</div></div>
+        <div class="tab"><div class="tab-icon">🔍</div><div class="tab-label">Search</div></div>
+        <div class="tab"><div class="tab-icon">📁</div><div class="tab-label">Files</div></div>
+        <div class="tab"><div class="tab-pip"></div><div class="tab-icon">👥</div><div class="tab-label active">People</div></div>
+        <div class="tab"><div class="tab-icon">☰</div><div class="tab-label">More</div></div>
+      </div>
+    </div>
+    <div class="phone-desc">AI face clusters shown as avatar cards. Unnamed clusters shown with dashed border — tap to assign name. Pets included.</div>
+  </div>
+
+  <!-- MORE TAB -->
+  <div class="phone-wrap">
+    <div class="phone-label">☰ More</div>
+    <div class="phone">
+      <div class="status-bar"><span class="status-time">9:41</span><div class="status-icons"><div class="status-icon"></div><div class="status-icon"></div><div class="status-icon" style="width:12px;height:5px;border-radius:2px"></div></div></div>
+      <div class="screen-body">
+        <div class="more-header"><span class="more-title">More</span></div>
+        <div class="user-card">
+          <div class="user-ava"></div>
+          <div class="user-info">
+            <div class="user-name">Avinash Kumar</div>
+            <div class="user-email">admin@avinash-eye.local</div>
+            <div class="user-quota"><div class="user-quota-fill"></div></div>
+            <div class="user-quota-text">42 GB of 100 GB used</div>
+          </div>
+        </div>
+        <div class="more-list">
+          <div class="more-item"><div class="mi-icon" style="background:rgba(52,211,153,.15)">📚</div><div class="mi-text">Albums</div><div class="mi-meta">23 albums</div><div class="mi-arrow">›</div></div>
+          <div class="more-item"><div class="mi-icon" style="background:rgba(96,165,250,.15)">🔗</div><div class="mi-text">Shared Links</div><div class="mi-meta">4 active</div><div class="mi-arrow">›</div></div>
+          <div class="more-item"><div class="mi-icon" style="background:rgba(251,191,36,.15)">👨‍👩‍👧</div><div class="mi-text">Family</div><div class="mi-meta">3 members</div><div class="mi-arrow">›</div></div>
+          <div class="more-item"><div class="mi-icon" style="background:rgba(168,85,247,.15)">🗑</div><div class="mi-text">Trash</div><div class="mi-meta">12 items</div><div class="mi-arrow">›</div></div>
+          <div class="more-item"><div class="mi-icon" style="background:rgba(52,211,153,.12)">☁️</div><div class="mi-text">Backup Status</div><div class="mi-meta"><span class="sync-dot"></span>Synced · 2m ago</div><div class="mi-arrow">›</div></div>
+          <div class="more-item"><div class="mi-icon" style="background:rgba(107,114,128,.15)">⚙️</div><div class="mi-text">Settings</div><div class="mi-meta">WiFi only · Auto-backup on</div><div class="mi-arrow">›</div></div>
+        </div>
+      </div>
+      <div class="bottom-bar">
+        <div class="tab"><div class="tab-icon">🖼</div><div class="tab-label">Photos</div></div>
+        <div class="tab"><div class="tab-icon">🔍</div><div class="tab-label">Search</div></div>
+        <div class="tab"><div class="tab-icon">📁</div><div class="tab-label">Files</div></div>
+        <div class="tab"><div class="tab-icon">👥</div><div class="tab-label">People</div></div>
+        <div class="tab"><div class="tab-pip"></div><div class="tab-icon">☰</div><div class="tab-label active">More</div></div>
+      </div>
+    </div>
+    <div class="phone-desc">User card with storage quota bar. Albums, Shared Links, Family, Trash, live Backup Status (pulsing dot), Settings.</div>
+  </div>
+
+</div>
+
+<div style="margin-top:1.5rem;background:rgba(124,106,247,.08);border:1px solid rgba(124,106,247,.25);border-radius:10px;padding:1rem;font-size:.83rem;color:#8892b0;line-height:1.6;text-align:center">
+  <strong style="color:#c084fc">Do these 5 screens look right?</strong> — One more screen to show: the NativePHP Desktop app. Then I'll write the full spec doc.
+</div>
+</body>
+</html>

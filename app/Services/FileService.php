@@ -150,19 +150,15 @@ class FileService
      */
     public function convertToSharedPath(string $laravelPath): string
     {
-        // Docker mounts ./storage/app/public to /app/shared
-        // Strip 'storage/app/public/' or 'public/' prefix to get relative path
-        // Examples:
-        //   public/images/abc.jpg    → /app/shared/images/abc.jpg
-        //   public/videos/xyz.mp4    → /app/shared/videos/xyz.mp4
-        //   public/documents/doc.pdf → /app/shared/documents/doc.pdf
+        $prefix = rtrim(config('ai.shared_prefix', '/app/shared/'), '/') . '/';
+
         $relativePath = preg_replace(
             '#^(storage/app/)?public/#',
             '',
             $laravelPath
         );
 
-        return '/app/shared/' . $relativePath;
+        return $prefix . $relativePath;
     }
 
     /**

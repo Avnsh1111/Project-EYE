@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Architecture Design</title>
+<script src="/helper.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f1117;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;padding:1.75rem;font-size:13px}
+h2{font-size:1.3rem;font-weight:700;color:#c7d2fe;margin-bottom:.25rem}
+.subtitle{color:#8892b0;margin-bottom:1.5rem;font-size:.88rem}
+
+/* ===== MAIN DIAGRAM ===== */
+.diagram{display:flex;flex-direction:column;gap:.6rem}
+
+/* Row of blocks */
+.row{display:flex;gap:.6rem;align-items:stretch}
+.row.center{justify-content:center}
+
+/* Block types */
+.block{border-radius:12px;padding:.75rem 1rem;position:relative;flex:1}
+.block-title{font-size:.8rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-bottom:.3rem}
+.block-items{display:flex;flex-direction:column;gap:3px}
+.block-item{display:flex;align-items:center;gap:5px;font-size:.75rem;color:rgba(255,255,255,.7)}
+.block-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+/* Clients row */
+.client-web{background:linear-gradient(135deg,rgba(79,70,229,.2),rgba(79,70,229,.08));border:1px solid rgba(79,70,229,.4)}
+.client-desktop{background:linear-gradient(135deg,rgba(20,184,166,.2),rgba(20,184,166,.08));border:1px solid rgba(20,184,166,.4)}
+.client-mobile{background:linear-gradient(135deg,rgba(168,85,247,.2),rgba(168,85,247,.08));border:1px solid rgba(168,85,247,.4)}
+
+/* API layer */
+.api-block{background:linear-gradient(135deg,rgba(251,191,36,.12),rgba(251,191,36,.04));border:1px solid rgba(251,191,36,.3);flex:1}
+
+/* Server services */
+.svc-laravel{background:linear-gradient(135deg,rgba(239,68,68,.15),rgba(239,68,68,.05));border:1px solid rgba(239,68,68,.35)}
+.svc-python{background:linear-gradient(135deg,rgba(16,185,129,.15),rgba(16,185,129,.05));border:1px solid rgba(16,185,129,.35)}
+.svc-node{background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(245,158,11,.05));border:1px solid rgba(245,158,11,.35)}
+.svc-queue{background:linear-gradient(135deg,rgba(99,102,241,.15),rgba(99,102,241,.05));border:1px solid rgba(99,102,241,.35)}
+
+/* Storage */
+.storage-pg{background:linear-gradient(135deg,rgba(96,165,250,.15),rgba(96,165,250,.05));border:1px solid rgba(96,165,250,.35)}
+.storage-es{background:linear-gradient(135deg,rgba(251,191,36,.15),rgba(251,191,36,.05));border:1px solid rgba(251,191,36,.35)}
+.storage-ollama{background:linear-gradient(135deg,rgba(236,72,153,.15),rgba(236,72,153,.05));border:1px solid rgba(236,72,153,.35)}
+.storage-files{background:linear-gradient(135deg,rgba(107,114,128,.2),rgba(107,114,128,.08));border:1px solid rgba(107,114,128,.35)}
+
+/* Arrow connector */
+.arrow-row{display:flex;align-items:center;justify-content:center;gap:.6rem;height:22px;padding:0 .5rem}
+.arrow{display:flex;flex-direction:column;align-items:center;flex:1}
+.arrow-line{width:1px;height:14px;background:rgba(255,255,255,.15)}
+.arrow-head{border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid rgba(255,255,255,.2)}
+.arrow-up{border-top:none;border-bottom:6px solid rgba(255,255,255,.2)}
+.arrow-label{font-size:.62rem;color:#6b7280;text-align:center;white-space:nowrap}
+
+.section-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;text-align:center;padding:.2rem 0}
+
+/* NEW feature badges */
+.new-badge{display:inline-block;background:#059669;color:#fff;font-size:.6rem;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:4px;vertical-align:middle}
+.fix-badge{display:inline-block;background:#dc2626;color:#fff;font-size:.6rem;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:4px;vertical-align:middle}
+
+/* Phase indicators */
+.phase-indicator{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;font-size:.6rem;font-weight:800;flex-shrink:0;margin-right:3px}
+.p1{background:rgba(239,68,68,.8);color:#fff}
+.p2{background:rgba(249,115,22,.8);color:#fff}
+.p3{background:rgba(96,165,250,.8);color:#fff}
+.p4{background:rgba(168,85,247,.8);color:#fff}
+.p5{background:rgba(52,211,153,.8);color:#1a1a1a}
+
+/* Legend */
+.legend{display:flex;gap:1rem;flex-wrap:wrap;margin-top:1rem;padding:.75rem 1rem;background:#1a1d27;border:1px solid #2e3250;border-radius:10px}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:.75rem;color:#9ca3af}
+.legend-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+
+/* Connection lines between clients and API */
+.connections{display:flex;justify-content:space-around;height:28px;position:relative;align-items:center;padding:0 2rem}
+.conn-line{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(251,191,36,.4),transparent);position:relative}
+.conn-label{font-size:.65rem;color:#6b7280;text-align:center;padding:0 4px;background:#0f1117;white-space:nowrap;position:relative;z-index:1}
+</style>
+</head>
+<body>
+<h2>Full System Architecture</h2>
+<p class="subtitle">Avinash-EYE — Self-hosted Google Photos + Drive. Server stays on your machine. All three clients connect to it.</p>
+
+<div class="diagram">
+
+  <!-- CLIENT LAYER -->
+  <div class="section-label">CLIENT LAYER</div>
+  <div class="row">
+
+    <div class="block client-web" style="flex:1.1">
+      <div class="block-title" style="color:#818cf8">🌐 Web App (Browser)</div>
+      <div class="block-items">
+        <div class="block-item"><div class="block-dot" style="background:#818cf8"></div>Existing Livewire 3 UI — polish only</div>
+        <div class="block-item"><div class="block-dot" style="background:#818cf8"></div>Unified Hub nav (Photos / Search / Files / People)</div>
+        <div class="block-item"><div class="block-dot" style="background:#818cf8"></div>Drag-drop upload + manual select</div>
+        <div class="block-item"><div class="block-dot" style="background:#059669"></div>Multi-user switcher <span class="new-badge">NEW</span></div>
+        <div class="block-item"><div class="block-dot" style="background:#059669"></div>Admin dashboard <span class="new-badge">NEW</span></div>
+      </div>
+    </div>
+
+    <div class="block client-desktop" style="flex:1.2">
+      <div class="block-title" style="color:#2dd4bf">🖥 NativePHP Desktop (Mac/Win/Linux)</div>
+      <div class="block-items">
+        <div class="block-item"><div class="block-dot" style="background:#2dd4bf"></div>Wraps web UI in native Electron window</div>
+        <div class="block-item"><div class="block-dot" style="background:#2dd4bf"></div>System tray — sync status + quick upload</div>
+        <div class="block-item"><div class="block-dot" style="background:#2dd4bf"></div>Folder watcher — auto-import from Pictures / Downloads</div>
+        <div class="block-item"><div class="block-dot" style="background:#2dd4bf"></div>Native menus, file dialogs, notifications</div>
+        <div class="block-item"><div class="block-dot" style="background:#2dd4bf"></div>Background sync daemon — instant on file change</div>
+        <div class="block-item"><div class="block-dot" style="background:#2dd4bf"></div>Offline queue — retries when server back online</div>
+      </div>
+    </div>
+
+    <div class="block client-mobile" style="flex:1.2">
+      <div class="block-title" style="color:#c084fc">📱 NativePHP Mobile (iOS + Android)</div>
+      <div class="block-items">
+        <div class="block-item"><div class="block-dot" style="background:#c084fc"></div>Scrap React Native — full rebuild in NativePHP</div>
+        <div class="block-item"><div class="block-dot" style="background:#c084fc"></div>Camera roll auto-backup (instant on WiFi)</div>
+        <div class="block-item"><div class="block-dot" style="background:#c084fc"></div>Offline queue — uploads on WiFi reconnect</div>
+        <div class="block-item"><div class="block-dot" style="background:#c084fc"></div>Background task — runs when app is closed</div>
+        <div class="block-item"><div class="block-dot" style="background:#c084fc"></div>Push notifications — upload complete / shared</div>
+        <div class="block-item"><div class="block-dot" style="background:#c084fc"></div>Photos / Search / Files / People / More tabs</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ARROW DOWN -->
+  <div class="connections">
+    <div class="conn-line"></div>
+    <div class="conn-label">HTTP / REST API  ·  Sanctum Auth  ·  WebSocket (Reverb)</div>
+    <div class="conn-line"></div>
+  </div>
+
+  <!-- API LAYER -->
+  <div class="section-label">API LAYER (New — built once, used by all 3 clients)</div>
+  <div class="row">
+    <div class="block api-block">
+      <div class="block-title" style="color:#fbbf24">Laravel API — Enhanced</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin-top:.25rem">
+
+        <div style="background:rgba(0,0,0,.3);border-radius:8px;padding:.5rem">
+          <div style="font-size:.68rem;font-weight:700;color:#fbbf24;margin-bottom:.3rem;text-transform:uppercase">Auth & Users</div>
+          <div class="block-item"><div class="block-dot" style="background:#34d399"></div>Multi-user accounts <span class="new-badge">NEW</span></div>
+          <div class="block-item"><div class="block-dot" style="background:#34d399"></div>Family sharing pool <span class="new-badge">NEW</span></div>
+          <div class="block-item"><div class="block-dot" style="background:#34d399"></div>Storage quotas <span class="new-badge">NEW</span></div>
+          <div class="block-item"><div class="block-dot" style="background:#34d399"></div>Invite system <span class="new-badge">NEW</span></div>
+          <div class="block-item"><div class="block-dot" style="background:#6b7280"></div>Sanctum tokens (existing)</div>
+        </div>
+
+        <div style="background:rgba(0,0,0,.3);border-radius:8px;padding:.5rem">
+          <div style="font-size:.68rem;font-weight:700;color:#fbbf24;margin-bottom:.3rem;text-transform:uppercase">Media & Files</div>
+          <div class="block-item"><div class="block-dot" style="background:#34d399"></div>Any file type upload <span class="new-badge">NEW</span></div>
+          <div class="block-item"><div class="block-dot" style="background:#34d399"></div>Shareable links + expiry <span class="new-badge">NEW</span></div>
+          <div class="block-item"><div class="block-dot" style="background:#34d399"></div>Shared albums <span class="new-badge">NEW</span></div>
+          <div class="block-item"><div class="block-dot" style="background:#34d399"></div>Star / trash / restore <span class="new-badge">NEW</span></div>
+          <div class="block-item"><div class="block-dot" style="background:#6b7280"></div>Existing media pipeline</div>
+        </div>
+
+        <div style="background:rgba(0,0,0,.3);border-radius:8px;padding:.5rem">
+          <div style="font-size:.68rem;font-weight:700;color:#fbbf24;margin-bottom:.3rem;text-transform:uppercase">Sync & Upload</div>
+          <div class="block-item"><div class="block-dot" style="background:#34d399"></div>Dedup hash check <span class="new-badge">NEW</span></div>
+          <div class="block-item"><div class="block-dot" style="background:#34d399"></div>Resumable uploads <span class="new-badge">NEW</span></div>
+          <div class="block-item"><div class="block-dot" style="background:#34d399"></div>Device sync state <span class="new-badge">NEW</span></div>
+          <div class="block-item"><div class="block-dot" style="background:#dc2626"></div>Fix config key bug <span class="fix-badge">FIX</span></div>
+          <div class="block-item"><div class="block-dot" style="background:#dc2626"></div>Fix range request bug <span class="fix-badge">FIX</span></div>
+        </div>
+
+        <div style="background:rgba(0,0,0,.3);border-radius:8px;padding:.5rem">
+          <div style="font-size:.68rem;font-weight:700;color:#fbbf24;margin-bottom:.3rem;text-transform:uppercase">Admin & Events</div>
+          <div class="block-item"><div class="block-dot" style="background:#34d399"></div>Admin dashboard API <span class="new-badge">NEW</span></div>
+          <div class="block-item"><div class="block-dot" style="background:#34d399"></div>Storage usage per user <span class="new-badge">NEW</span></div>
+          <div class="block-item"><div class="block-dot" style="background:#34d399"></div>Laravel Reverb (WS) <span class="new-badge">NEW</span></div>
+          <div class="block-item"><div class="block-dot" style="background:#dc2626"></div>ImageProcessed listener <span class="fix-badge">FIX</span></div>
+          <div class="block-item"><div class="block-dot" style="background:#dc2626"></div>.env PostgreSQL fix <span class="fix-badge">FIX</span></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ARROW -->
+  <div class="connections">
+    <div class="conn-line"></div>
+    <div class="conn-label">Internal service calls</div>
+    <div class="conn-line"></div>
+  </div>
+
+  <!-- SERVER SERVICES -->
+  <div class="section-label">SERVER MICROSERVICES (existing Docker stack)</div>
+  <div class="row">
+    <div class="block svc-laravel">
+      <div class="block-title" style="color:#f87171">⚡ Laravel 12 + FPM</div>
+      <div class="block-items">
+        <div class="block-item"><div class="block-dot" style="background:#f87171"></div>17 services (all existing)</div>
+        <div class="block-item"><div class="block-dot" style="background:#f87171"></div>Queue worker (24/7)</div>
+        <div class="block-item"><div class="block-dot" style="background:#f87171"></div>Scheduler container</div>
+        <div class="block-item"><div class="block-dot" style="background:#059669"></div>ArchiveFile::hasPassword() fix <span class="fix-badge">FIX</span></div>
+        <div class="block-item"><div class="block-dot" style="background:#059669"></div>CacheService::getStats() fix <span class="fix-badge">FIX</span></div>
+      </div>
+    </div>
+    <div class="block svc-python">
+      <div class="block-title" style="color:#10b981">🐍 Python FastAPI AI</div>
+      <div class="block-items">
+        <div class="block-item"><div class="block-dot" style="background:#10b981"></div>BLIP / CLIP / Florence-2</div>
+        <div class="block-item"><div class="block-dot" style="background:#10b981"></div>Face recognition (dlib)</div>
+        <div class="block-item"><div class="block-dot" style="background:#10b981"></div>Whisper audio transcription</div>
+        <div class="block-item"><div class="block-dot" style="background:#10b981"></div>PaddleOCR + Tesseract</div>
+      </div>
+    </div>
+    <div class="block svc-node">
+      <div class="block-title" style="color:#f59e0b">📦 Node.js Processor</div>
+      <div class="block-items">
+        <div class="block-item"><div class="block-dot" style="background:#f59e0b"></div>Sharp — thumbnails</div>
+        <div class="block-item"><div class="block-dot" style="background:#f59e0b"></div>EXIF extraction</div>
+        <div class="block-item"><div class="block-dot" style="background:#f59e0b"></div>Image resizing / WebP</div>
+      </div>
+    </div>
+    <div class="block svc-queue">
+      <div class="block-title" style="color:#818cf8">🦙 Ollama LLM</div>
+      <div class="block-items">
+        <div class="block-item"><div class="block-dot" style="background:#818cf8"></div>LLaVA 13B vision</div>
+        <div class="block-item"><div class="block-dot" style="background:#818cf8"></div>Enhanced descriptions</div>
+        <div class="block-item"><div class="block-dot" style="background:#818cf8"></div>Scene classification</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ARROW -->
+  <div class="connections">
+    <div class="conn-line"></div>
+    <div class="conn-label">Persist / Query</div>
+    <div class="conn-line"></div>
+  </div>
+
+  <!-- STORAGE -->
+  <div class="section-label">STORAGE (existing)</div>
+  <div class="row">
+    <div class="block storage-pg">
+      <div class="block-title" style="color:#60a5fa">🐘 PostgreSQL 16 + pgvector</div>
+      <div class="block-items">
+        <div class="block-item"><div class="block-dot" style="background:#60a5fa"></div>All media metadata</div>
+        <div class="block-item"><div class="block-dot" style="background:#60a5fa"></div>512–1024d vector embeddings</div>
+        <div class="block-item"><div class="block-dot" style="background:#059669"></div>New: users, quotas, shares tables <span class="new-badge">NEW</span></div>
+      </div>
+    </div>
+    <div class="block storage-es">
+      <div class="block-title" style="color:#fbbf24">🔍 Elasticsearch 8</div>
+      <div class="block-items">
+        <div class="block-item"><div class="block-dot" style="background:#fbbf24"></div>Full-text search index</div>
+        <div class="block-item"><div class="block-dot" style="background:#fbbf24"></div>AI captions + tags</div>
+        <div class="block-item"><div class="block-dot" style="background:#fbbf24"></div>Cross-user search (admin)</div>
+      </div>
+    </div>
+    <div class="block storage-ollama">
+      <div class="block-title" style="color:#f472b6">📁 File Storage</div>
+      <div class="block-items">
+        <div class="block-item"><div class="block-dot" style="background:#f472b6"></div>Laravel storage/ (local)</div>
+        <div class="block-item"><div class="block-dot" style="background:#059669"></div>Per-user directories <span class="new-badge">NEW</span></div>
+        <div class="block-item"><div class="block-dot" style="background:#059669"></div>Quota enforcement <span class="new-badge">NEW</span></div>
+      </div>
+    </div>
+    <div class="block storage-files">
+      <div class="block-title" style="color:#9ca3af">⚡ Laravel Reverb</div>
+      <div class="block-items">
+        <div class="block-item"><div class="block-dot" style="background:#059669"></div>WebSocket server <span class="new-badge">NEW</span></div>
+        <div class="block-item"><div class="block-dot" style="background:#059669"></div>Real-time sync events</div>
+        <div class="block-item"><div class="block-dot" style="background:#059669"></div>Upload progress push</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- LEGEND -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#059669"></div>NEW feature</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#dc2626"></div>BUG FIX</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#818cf8"></div>Existing (keep)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#2dd4bf"></div>NativePHP Desktop (new app)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#c084fc"></div>NativePHP Mobile (replaces React Native)</div>
+  <div style="flex:1"></div>
+  <div class="legend-item" style="color:#fbbf24;font-weight:600">Does this architecture look right? ✓</div>
+</div>
+</body>
+</html>

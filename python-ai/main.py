@@ -80,7 +80,10 @@ device = None
 
 
 class AnalyzeRequest(BaseModel):
-    """Request model for image analysis."""
+    """Request model for image analysis. Accepts both legacy (face_detection_enabled,
+    ollama_enabled) and multimedia (detect_faces, use_ollama) field names via aliases."""
+    model_config = {"populate_by_name": True}
+
     image_path: str
     captioning_model: Optional[str] = "Salesforce/blip-image-captioning-large"
     embedding_model: Optional[str] = "openai/clip-vit-base-patch32"
@@ -208,13 +211,21 @@ def generate_image_embedding(image: Image.Image) -> np.ndarray:
         Normalized embedding vector as numpy array
     """
     inputs = clip_processor(images=image, return_tensors="pt").to(device)
-    
+
     with torch.no_grad():
         image_features = clip_model.get_image_features(**inputs)
-    
-    # Normalize the embedding
-    embedding = image_features / image_features.norm(dim=-1, keepdim=True)
-    
+
+    if not torch.is_tensor(image_features):
+        for attr in ("image_embeds", "pooler_output"):
+            cand = getattr(image_features, attr, None)
+            if cand is not None:
+                image_features = cand
+                break
+        else:
+            image_features = image_features.last_hidden_state.mean(dim=1)
+
+    embedding = torch.nn.functional.normalize(image_features, dim=-1)
+
     return embedding.cpu().numpy().flatten()
 
 
@@ -229,13 +240,21 @@ def generate_text_embedding(text: str) -> np.ndarray:
         Normalized embedding vector as numpy array
     """
     inputs = clip_processor(text=[text], return_tensors="pt", padding=True).to(device)
-    
+
     with torch.no_grad():
         text_features = clip_model.get_text_features(**inputs)
-    
-    # Normalize the embedding
-    embedding = text_features / text_features.norm(dim=-1, keepdim=True)
-    
+
+    if not torch.is_tensor(text_features):
+        for attr in ("text_embeds", "pooler_output"):
+            cand = getattr(text_features, attr, None)
+            if cand is not None:
+                text_features = cand
+                break
+        else:
+            text_features = text_features.last_hidden_state.mean(dim=1)
+
+    embedding = torch.nn.functional.normalize(text_features, dim=-1)
+
     return embedding.cpu().numpy().flatten()
 
 
@@ -395,6 +414,17 @@ async def health_check():
         "ollama_available": ollama_running,
         "face_recognition_available": FACE_RECOGNITION_AVAILABLE
     }
+
+
+@app.post("/analyze-image", response_model=AnalyzeResponse)
+async def analyze_image_alias(request: dict):
+    """Alias that accepts Laravel multimedia field names (detect_faces, use_ollama)."""
+    normalized = dict(request)
+    if "detect_faces" in normalized and "face_detection_enabled" not in normalized:
+        normalized["face_detection_enabled"] = bool(normalized.pop("detect_faces"))
+    if "use_ollama" in normalized and "ollama_enabled" not in normalized:
+        normalized["ollama_enabled"] = bool(normalized.pop("use_ollama"))
+    return await analyze_image(AnalyzeRequest(**normalized))
 
 
 @app.post("/analyze", response_model=AnalyzeResponse)

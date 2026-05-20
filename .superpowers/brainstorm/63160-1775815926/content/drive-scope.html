@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Drive Scope</title>
+<script src="/helper.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f1117;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;padding:2rem;font-size:14px}
+h2{font-size:1.35rem;font-weight:700;color:#c7d2fe;margin-bottom:.35rem}
+.subtitle{color:#8892b0;margin-bottom:1.5rem;font-size:.9rem}
+
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+.opt{background:#1a1d27;border:2px solid #2e3250;border-radius:14px;overflow:hidden;cursor:pointer;transition:all .2s}
+.opt:hover{border-color:#7c6af7;transform:translateY(-2px)}
+.opt.selected{border-color:#7c6af7;background:#1e1b4b}
+.opt-header{padding:1rem 1.25rem .6rem;display:flex;align-items:center;gap:.6rem}
+.opt-letter{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.9rem;color:#fff;flex-shrink:0}
+.opt-title{font-size:.93rem;font-weight:700;color:#e2e8f0}
+.opt-body{padding:0 1.25rem 1rem}
+.opt-desc{font-size:.82rem;color:#8892b0;line-height:1.55;margin-bottom:.85rem}
+
+/* Feature list */
+.feat-list{list-style:none;display:flex;flex-direction:column;gap:4px}
+.feat-list li{display:flex;align-items:flex-start;gap:7px;font-size:.81rem;padding:3px 0}
+.feat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:3px}
+
+/* Drive mockup */
+.drive-mock{background:#0d1117;border-radius:8px;overflow:hidden;margin-bottom:.85rem}
+.drive-toolbar{height:26px;background:#1f2937;border-bottom:1px solid #374151;display:flex;align-items:center;gap:6px;padding:0 8px}
+.dtb-btn{height:14px;width:40px;background:#374151;border-radius:3px}
+.dtb-spacer{flex:1}
+.dtb-icon{width:16px;height:16px;background:#374151;border-radius:3px}
+.drive-inner{display:flex;min-height:80px}
+.drive-tree{width:80px;background:#161b27;border-right:1px solid #1f2937;padding:6px 5px;display:flex;flex-direction:column;gap:3px}
+.tree-item{display:flex;align-items:center;gap:4px;padding:2px 3px;border-radius:3px;font-size:6.5px;color:#9ca3af}
+.tree-item.active{background:#1e2a45;color:#818cf8}
+.tree-icon{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.ti-folder{background:#4b5563}
+.ti-smart{background:#4f46e5}
+.ti-star{background:#d97706}
+.ti-trash{background:#6b7280}
+.drive-files{flex:1;padding:6px;display:grid;gap:3px}
+
+/* Compact file row */
+.frow{display:flex;align-items:center;gap:5px;padding:2px 3px;border-radius:3px;font-size:6.5px;color:#d1d5db}
+.frow:nth-child(odd){background:#161b27}
+.frow-icon{width:12px;height:12px;border-radius:2px;flex-shrink:0}
+.frow-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.frow-size{color:#6b7280;flex-shrink:0}
+.frow-actions{display:flex;gap:2px}
+.faction{width:10px;height:10px;background:#374151;border-radius:2px}
+
+/* Grid view for media */
+.fgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;flex:1;padding:4px}
+.fgrid-cell{aspect-ratio:1;border-radius:3px;background:#1e2530}
+.fgrid-cell.big{grid-column:span 2;grid-row:span 2;background:#263040}
+
+/* Share mockup */
+.share-mock{background:#0d1117;border-radius:8px;padding:8px;margin-top:6px}
+.share-row{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.share-avatar{width:20px;height:20px;border-radius:50%;flex-shrink:0}
+.share-info{flex:1}
+.share-name{font-size:7px;color:#e2e8f0;font-weight:600}
+.share-email{font-size:6px;color:#9ca3af}
+.share-perm{font-size:6px;color:#818cf8;background:rgba(124,106,247,.15);padding:1px 5px;border-radius:3px}
+.share-link{background:#1f2937;border-radius:5px;padding:5px 7px;display:flex;align-items:center;gap:5px}
+.share-link-text{font-size:7px;color:#818cf8;flex:1;overflow:hidden}
+.share-copy{font-size:6px;color:#fff;background:#4f46e5;border-radius:3px;padding:2px 5px}
+
+.tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.72rem;font-weight:600;margin-right:4px;margin-top:4px}
+.tag-green{background:rgba(52,211,153,.15);color:#34d399}
+.tag-yellow{background:rgba(251,191,36,.12);color:#fbbf24}
+.tag-blue{background:rgba(96,165,250,.15);color:#60a5fa}
+.tag-purple{background:rgba(124,106,247,.15);color:#a78bfa}
+.tag-red{background:rgba(248,113,113,.15);color:#f87171}
+</style>
+</head>
+<body>
+<h2>Files / Drive Tab — Feature Scope</h2>
+<p class="subtitle">How much "Google Drive" do you want? This shapes the API, models, and storage layer significantly.</p>
+
+<div class="options-grid">
+
+  <!-- A: Smart Media Organiser -->
+  <div class="opt" data-choice="a" onclick="toggleSelect(this)">
+    <div class="opt-header">
+      <div class="opt-letter" style="background:#4f46e5">A</div>
+      <div class="opt-title">Smart Media Organiser Only</div>
+    </div>
+    <div class="opt-body">
+      <div class="drive-mock">
+        <div class="drive-toolbar"><div class="dtb-btn"></div><div class="dtb-spacer"></div><div class="dtb-icon"></div><div class="dtb-icon"></div></div>
+        <div class="drive-inner">
+          <div class="drive-tree">
+            <div class="tree-item active"><div class="tree-icon ti-smart"></div>All Media</div>
+            <div class="tree-item"><div class="tree-icon ti-smart"></div>Albums</div>
+            <div class="tree-item"><div class="tree-icon ti-folder"></div>2025</div>
+            <div class="tree-item" style="padding-left:12px"><div class="tree-icon ti-folder"></div>Jan</div>
+            <div class="tree-item" style="padding-left:12px"><div class="tree-icon ti-folder"></div>Feb</div>
+            <div class="tree-item"><div class="tree-icon ti-folder"></div>2024</div>
+            <div class="tree-item"><div class="tree-icon ti-trash"></div>Trash</div>
+          </div>
+          <div class="fgrid">
+            <div class="fgrid-cell big"></div>
+            <div class="fgrid-cell"></div><div class="fgrid-cell"></div>
+            <div class="fgrid-cell"></div><div class="fgrid-cell"></div>
+            <div class="fgrid-cell"></div><div class="fgrid-cell"></div>
+          </div>
+        </div>
+      </div>
+      <p class="opt-desc">The Files tab is just an alternate view of your media — browse by folder/date/album. No arbitrary file uploads beyond images/videos/audio/docs that are already supported.</p>
+      <ul class="feat-list">
+        <li><div class="feat-dot" style="background:#34d399"></div>Date-organised folders (2025 → Jan → photos)</li>
+        <li><div class="feat-dot" style="background:#34d399"></div>Smart albums (AI-curated: Trips, Pets, Food)</li>
+        <li><div class="feat-dot" style="background:#34d399"></div>Manual albums + folder creation</li>
+        <li><div class="feat-dot" style="background:#34d399"></div>Move / copy between folders</li>
+        <li><div class="feat-dot" style="background:#6b7280"></div>No arbitrary file upload (only media types)</li>
+        <li><div class="feat-dot" style="background:#6b7280"></div>No sharing links</li>
+      </ul>
+      <span class="tag tag-green">Simplest to build</span><span class="tag tag-blue">Full AI features</span>
+    </div>
+  </div>
+
+  <!-- B: Full Drive -->
+  <div class="opt" data-choice="b" onclick="toggleSelect(this)">
+    <div class="opt-header">
+      <div class="opt-letter" style="background:#0891b2">B</div>
+      <div class="opt-title">Full Drive — Any File Type + Sharing</div>
+    </div>
+    <div class="opt-body">
+      <div class="drive-mock">
+        <div class="drive-toolbar"><div class="dtb-btn"></div><div class="dtb-spacer"></div><div class="dtb-icon"></div><div class="dtb-icon"></div></div>
+        <div class="drive-inner">
+          <div class="drive-tree">
+            <div class="tree-item active"><div class="tree-icon ti-smart"></div>My Drive</div>
+            <div class="tree-item"><div class="tree-icon ti-star"></div>Starred</div>
+            <div class="tree-item"><div class="tree-icon ti-smart"></div>Shared</div>
+            <div class="tree-item"><div class="tree-icon ti-folder"></div>Projects</div>
+            <div class="tree-item" style="padding-left:12px"><div class="tree-icon ti-folder"></div>Work</div>
+            <div class="tree-item"><div class="tree-icon ti-folder"></div>Camera Roll</div>
+            <div class="tree-item"><div class="tree-icon ti-trash"></div>Trash</div>
+          </div>
+          <div class="drive-files">
+            <div class="frow"><div class="frow-icon" style="background:#4b5563"></div><div class="frow-name">Projects/</div><div class="frow-size">—</div><div class="frow-actions"><div class="faction"></div><div class="faction"></div></div></div>
+            <div class="frow"><div class="frow-icon" style="background:#3b82f6"></div><div class="frow-name">IMG_4821.jpg</div><div class="frow-size">4.2M</div><div class="frow-actions"><div class="faction"></div><div class="faction"></div></div></div>
+            <div class="frow"><div class="frow-icon" style="background:#ef4444"></div><div class="frow-name">Report.pdf</div><div class="frow-size">2.1M</div><div class="frow-actions"><div class="faction"></div><div class="faction"></div></div></div>
+            <div class="frow"><div class="frow-icon" style="background:#10b981"></div><div class="frow-name">Budget.xlsx</div><div class="frow-size">340K</div><div class="frow-actions"><div class="faction"></div><div class="faction"></div></div></div>
+            <div class="frow"><div class="frow-icon" style="background:#8b5cf6"></div><div class="frow-name">Presentation.pptx</div><div class="frow-size">8.7M</div><div class="frow-actions"><div class="faction"></div><div class="faction"></div></div></div>
+          </div>
+        </div>
+      </div>
+      <p class="opt-desc">Upload any file type. Folder tree you control. Shareable links, per-user permissions, starred files, recent, trash with retention policy.</p>
+      <ul class="feat-list">
+        <li><div class="feat-dot" style="background:#34d399"></div>Any file type (zip, xlsx, pptx, code…)</li>
+        <li><div class="feat-dot" style="background:#34d399"></div>Folder tree with drag-and-drop</li>
+        <li><div class="feat-dot" style="background:#34d399"></div>Shareable links with expiry + password</li>
+        <li><div class="feat-dot" style="background:#34d399"></div>Star / recent / shared-with-me views</li>
+        <li><div class="feat-dot" style="background:#34d399"></div>Trash with configurable retention</li>
+        <li><div class="feat-dot" style="background:#fbbf24"></div>AI analysis on supported types only</li>
+      </ul>
+      <div class="share-mock">
+        <div class="share-row"><div class="share-avatar" style="background:#4f46e5"></div><div class="share-info"><div class="share-name">Priya M.</div><div class="share-email">priya@home.local</div></div><div class="share-perm">Can view</div></div>
+        <div class="share-link"><div class="share-link-text">eye.local/s/xK9mP2qR</div><div class="share-copy">Copy</div></div>
+      </div>
+      <span class="tag tag-purple">Full Drive parity</span><span class="tag tag-yellow">Significant extra work</span>
+    </div>
+  </div>
+
+  <!-- C: Photos + Docs (recommended) -->
+  <div class="opt" data-choice="c" onclick="toggleSelect(this)">
+    <div class="opt-header">
+      <div class="opt-letter" style="background:#059669">C</div>
+      <div class="opt-title">Photos + Documents + Shared Links ⭐ Recommended</div>
+    </div>
+    <div class="opt-body">
+      <div class="drive-mock">
+        <div class="drive-toolbar"><div class="dtb-btn"></div><div class="dtb-spacer"></div><div class="dtb-icon"></div><div class="dtb-icon"></div></div>
+        <div class="drive-inner">
+          <div class="drive-tree">
+            <div class="tree-item active"><div class="tree-icon ti-smart"></div>All Files</div>
+            <div class="tree-item"><div class="tree-icon ti-smart"></div>Photos</div>
+            <div class="tree-item"><div class="tree-icon ti-smart"></div>Videos</div>
+            <div class="tree-item"><div class="tree-icon ti-smart"></div>Documents</div>
+            <div class="tree-item"><div class="tree-icon ti-smart"></div>Audio</div>
+            <div class="tree-item"><div class="tree-icon ti-folder"></div>My Folders</div>
+            <div class="tree-item"><div class="tree-icon ti-star"></div>Starred</div>
+            <div class="tree-item"><div class="tree-icon ti-trash"></div>Trash</div>
+          </div>
+          <div class="drive-files">
+            <div class="frow"><div class="frow-icon" style="background:#3b82f6"></div><div class="frow-name">Vacation_2025.jpg</div><div class="frow-size">8.2M</div></div>
+            <div class="frow"><div class="frow-icon" style="background:#ef4444"></div><div class="frow-name">Video_001.mp4</div><div class="frow-size">120M</div></div>
+            <div class="frow"><div class="frow-icon" style="background:#dc2626"></div><div class="frow-name">Invoice_Jan.pdf</div><div class="frow-size">340K</div></div>
+            <div class="frow"><div class="frow-icon" style="background:#7c3aed"></div><div class="frow-name">Notes.txt</div><div class="frow-size">12K</div></div>
+            <div class="frow"><div class="frow-icon" style="background:#0891b2"></div><div class="frow-name">Podcast_ep3.mp3</div><div class="frow-size">45M</div></div>
+          </div>
+        </div>
+      </div>
+      <p class="opt-desc">All media types the backend already handles (images, video, audio, documents, archives) + any file type upload. Smart type-based views. Shareable album links. No per-user sharing permissions (self-hosted single owner).</p>
+      <ul class="feat-list">
+        <li><div class="feat-dot" style="background:#34d399"></div>All existing media types + arbitrary file upload</li>
+        <li><div class="feat-dot" style="background:#34d399"></div>Smart filter views: Photos / Videos / Docs / Audio</li>
+        <li><div class="feat-dot" style="background:#34d399"></div>User folders + starred + trash</li>
+        <li><div class="feat-dot" style="background:#34d399"></div>Shareable album / folder links (expiry optional)</li>
+        <li><div class="feat-dot" style="background:#34d399"></div>Full AI analysis on all supported types</li>
+        <li><div class="feat-dot" style="background:#6b7280"></div>No multi-user permissions (single owner)</div></li>
+      </ul>
+      <span class="tag tag-green">Matches existing backend</span><span class="tag tag-green">Shareable links</span><span class="tag tag-blue">All AI features</span>
+    </div>
+  </div>
+
+  <!-- D: Full Google One -->
+  <div class="opt" data-choice="d" onclick="toggleSelect(this)">
+    <div class="opt-header">
+      <div class="opt-letter" style="background:#7c3aed">D</div>
+      <div class="opt-title">Full Google One — Multi-user + Family Sharing</div>
+    </div>
+    <div class="opt-body">
+      <p class="opt-desc">Multiple user accounts, each with their own library. Family sharing pool — share albums across accounts. Admin dashboard. Per-user storage quotas. Basically a self-hosted Google One.</p>
+      <ul class="feat-list">
+        <li><div class="feat-dot" style="background:#34d399"></div>Everything in C</div></li>
+        <li><div class="feat-dot" style="background:#34d399"></div>Multiple user accounts with separate libraries</li>
+        <li><div class="feat-dot" style="background:#34d399"></div>Family sharing pool & shared albums</li>
+        <li><div class="feat-dot" style="background:#34d399"></div>Per-user storage quotas + admin panel</li>
+        <li><div class="feat-dot" style="background:#34d399"></div>Shared albums across users with comments</li>
+        <li><div class="feat-dot" style="background:#f87171"></div>Largest scope — multi-sprint project</li>
+      </ul>
+      <span class="tag tag-purple">Self-hosted Google One</span><span class="tag" style="background:rgba(248,113,113,.15);color:#f87171">Largest build</span>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:1.5rem;background:rgba(46,50,80,0.4);border:1px solid #2e3250;border-radius:10px;padding:1rem;font-size:.83rem;color:#8892b0;line-height:1.6">
+  <strong style="color:#c7d2fe">Architecture note:</strong> The existing Laravel backend already handles images, videos, audio, documents, and archives with AI analysis. Option C maps perfectly onto what's already built — it just needs the Files UI layer, folder management, and shareable links added on top.
+</div>
+</body>
+</html>

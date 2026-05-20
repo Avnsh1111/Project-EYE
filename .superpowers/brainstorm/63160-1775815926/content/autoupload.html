@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Auto-Upload Behaviour</title>
+<script src="/helper.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f1117;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;padding:2rem;font-size:14px}
+h2{font-size:1.35rem;font-weight:700;color:#c7d2fe;margin-bottom:.35rem}
+.subtitle{color:#8892b0;margin-bottom:1.5rem;font-size:.9rem}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+.card{background:#1a1d27;border:2px solid #2e3250;border-radius:14px;padding:1.25rem;cursor:pointer;transition:all .2s}
+.card:hover{border-color:#7c6af7;transform:translateY(-2px)}
+.card.selected{border-color:#7c6af7;background:#1e1b4b}
+.card h3{font-size:.95rem;font-weight:700;color:#e2e8f0;margin-bottom:.4rem}
+.card .desc{font-size:.82rem;color:#8892b0;line-height:1.55;margin-bottom:.9rem}
+.tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.72rem;font-weight:600;margin-right:4px;margin-top:4px}
+.tag-green{background:rgba(52,211,153,.15);color:#34d399}
+.tag-yellow{background:rgba(251,191,36,.12);color:#fbbf24}
+.tag-blue{background:rgba(96,165,250,.15);color:#60a5fa}
+.tag-red{background:rgba(248,113,113,.15);color:#f87171}
+.tag-purple{background:rgba(124,106,247,.15);color:#a78bfa}
+
+/* Flow diagram */
+.flow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:10px 0 0}
+.flow-step{background:#21253a;border:1px solid #374151;border-radius:8px;padding:5px 10px;font-size:.75rem;color:#c7d2fe;text-align:center;min-width:70px}
+.flow-arrow{color:#4b5563;font-size:1rem;flex-shrink:0}
+.flow-step.trigger{border-color:#818cf8;background:rgba(124,106,247,.12);color:#a78bfa}
+.flow-step.action{border-color:#34d399;background:rgba(52,211,153,.08);color:#34d399}
+.flow-step.condition{border-color:#fbbf24;background:rgba(251,191,36,.08);color:#fbbf24;border-style:dashed}
+
+/* Mobile/desktop tags */
+.platform-row{display:flex;gap:6px;margin-bottom:.75rem}
+.platform{padding:3px 10px;border-radius:6px;font-size:.72rem;font-weight:700;letter-spacing:.04em}
+.platform-mobile{background:rgba(96,165,250,.15);color:#60a5fa;border:1px solid rgba(96,165,250,.3)}
+.platform-desktop{background:rgba(168,85,247,.15);color:#c084fc;border:1px solid rgba(168,85,247,.3)}
+
+/* Settings preview */
+.settings-block{background:#0d1117;border-radius:8px;padding:.75rem;margin-top:.75rem;font-size:.78rem}
+.setting-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #1f2937}
+.setting-row:last-child{border-bottom:none}
+.setting-label{color:#9ca3af}
+.toggle{width:28px;height:14px;border-radius:999px;background:#4f46e5;position:relative;flex-shrink:0}
+.toggle.off{background:#374151}
+.toggle::after{content:'';width:10px;height:10px;border-radius:50%;background:#fff;position:absolute;top:2px;right:2px;transition:.2s}
+.toggle.off::after{right:auto;left:2px}
+
+.letter-badge{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;font-size:.9rem;font-weight:800;color:#fff;flex-shrink:0;margin-right:8px}
+.card-header{display:flex;align-items:center;margin-bottom:.5rem}
+</style>
+</head>
+<body>
+<h2>Auto-Upload & Sync Behaviour</h2>
+<p class="subtitle">How should new photos/files get from devices to your self-hosted server?</p>
+
+<div class="grid">
+
+  <!-- Option A -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-header">
+      <div class="letter-badge" style="background:#4f46e5">A</div>
+      <h3>Instant Background Sync (Google Photos style)</h3>
+    </div>
+    <div class="platform-row">
+      <span class="platform platform-mobile">Mobile</span>
+      <span class="platform platform-desktop">Desktop</span>
+    </div>
+    <p class="desc">As soon as new photos land on your camera roll (mobile) or watched folder (desktop), they queue up and upload automatically in the background — even when the app is closed. Upload over WiFi only or any connection (configurable).</p>
+    <div class="flow">
+      <div class="flow-step trigger">New photo taken</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step condition">WiFi check</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step action">Queue job</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step action">Upload</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step action">AI process</div>
+    </div>
+    <div class="settings-block">
+      <div class="setting-row"><span class="setting-label">Auto-backup enabled</span><div class="toggle"></div></div>
+      <div class="setting-row"><span class="setting-label">WiFi only</span><div class="toggle"></div></div>
+      <div class="setting-row"><span class="setting-label">Include videos</span><div class="toggle"></div></div>
+      <div class="setting-row"><span class="setting-label">Background sync</span><div class="toggle"></div></div>
+    </div>
+    <div style="margin-top:8px">
+      <span class="tag tag-green">True zero-touch backup</span>
+      <span class="tag tag-blue">Background service</span>
+      <span class="tag tag-yellow">Needs OS permissions</span>
+    </div>
+  </div>
+
+  <!-- Option B -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-header">
+      <div class="letter-badge" style="background:#0891b2">B</div>
+      <h3>Smart Scheduled Sync + Manual Upload</h3>
+    </div>
+    <div class="platform-row">
+      <span class="platform platform-mobile">Mobile</span>
+      <span class="platform platform-desktop">Desktop</span>
+    </div>
+    <p class="desc">Sync runs on a schedule (every 15 min / 1 hr / daily) or when you open the app. Manual upload always available. Less battery drain, simpler permissions. Desktop uses a tray app that syncs watched folders on schedule.</p>
+    <div class="flow">
+      <div class="flow-step trigger">Open app / schedule</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step action">Diff camera roll</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step action">Upload new</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step action">AI process</div>
+    </div>
+    <div class="settings-block">
+      <div class="setting-row"><span class="setting-label">Sync frequency</span><span style="color:#818cf8;font-size:.75rem">Every 1 hour</span></div>
+      <div class="setting-row"><span class="setting-label">WiFi only</span><div class="toggle"></div></div>
+      <div class="setting-row"><span class="setting-label">Sync on app open</span><div class="toggle"></div></div>
+      <div class="setting-row"><span class="setting-label">Last synced</span><span style="color:#6b7280;font-size:.75rem">2 min ago</span></div>
+    </div>
+    <div style="margin-top:8px">
+      <span class="tag tag-green">Lower battery impact</span>
+      <span class="tag tag-blue">Simpler to implement</span>
+      <span class="tag tag-purple">Predictable behaviour</span>
+    </div>
+  </div>
+
+  <!-- Option C -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-header">
+      <div class="letter-badge" style="background:#059669">C</div>
+      <h3>Hybrid — Instant on WiFi, Scheduled on Mobile Data</h3>
+    </div>
+    <div class="platform-row">
+      <span class="platform platform-mobile">Mobile</span>
+      <span class="platform platform-desktop">Desktop</span>
+    </div>
+    <p class="desc">Best of both: when on WiFi the app syncs instantly as photos arrive (like Google Photos). On mobile data it queues and syncs on schedule or when WiFi reconnects. Desktop app watches folders instantly. Manual upload always available with drag-and-drop on web.</p>
+    <div class="flow">
+      <div class="flow-step trigger">New photo</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step condition">On WiFi?</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step action">Instant upload</div>
+    </div>
+    <div class="flow" style="margin-top:4px">
+      <div class="flow-step" style="opacity:.4;min-width:70px"></div>
+      <div class="flow-arrow">↘</div>
+      <div class="flow-step condition">Mobile data</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step action">Queue offline</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step action">Upload on WiFi</div>
+    </div>
+    <div style="margin-top:8px">
+      <span class="tag tag-green">Exact Google Photos behaviour</span>
+      <span class="tag tag-yellow">Most complex sync logic</span>
+      <span class="tag tag-blue">Offline queue</span>
+    </div>
+  </div>
+
+  <!-- Option D -->
+  <div class="card" data-choice="d" onclick="toggleSelect(this)">
+    <div class="card-header">
+      <div class="letter-badge" style="background:#b45309">D</div>
+      <h3>Desktop Watch-Folder + Manual Upload on Mobile</h3>
+    </div>
+    <div class="platform-row">
+      <span class="platform platform-desktop">Desktop only auto</span>
+      <span class="platform platform-mobile">Mobile manual</span>
+    </div>
+    <p class="desc">Desktop app watches configured folders (Downloads, Pictures, screenshots) and auto-uploads anything new. On mobile, you choose what to upload — no background sync, no permissions needed. Good if the self-hosted server is on your home network only.</p>
+    <div class="flow">
+      <div class="flow-step trigger">File in folder</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step action">Desktop watcher</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step action">Auto-upload</div>
+    </div>
+    <div style="margin-top:8px">
+      <span class="tag tag-green">Simplest mobile app</span>
+      <span class="tag tag-blue">No mobile permissions</span>
+      <span class="tag tag-red">No mobile auto-backup</span>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:1.5rem;background:rgba(46,50,80,0.4);border:1px solid #2e3250;border-radius:10px;padding:1rem;font-size:.83rem;color:#8892b0;line-height:1.6">
+  <strong style="color:#c7d2fe">My recommendation: C</strong> — This is exactly how Google Photos works. WiFi = instant, mobile data = queued. It requires a background service and an offline queue but gives the most authentic experience. The NativePHP Mobile APIs (via Capacitor) give us the background task and filesystem access needed.
+</div>
+</body>
+</html>

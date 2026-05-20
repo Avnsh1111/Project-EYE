@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Phase Plan</title>
+<script src="/helper.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f1117;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;padding:1.75rem;font-size:13px}
+h2{font-size:1.3rem;font-weight:700;color:#c7d2fe;margin-bottom:.25rem}
+.subtitle{color:#8892b0;margin-bottom:1.5rem;font-size:.88rem}
+
+/* Timeline bar at top */
+.timeline-bar{display:flex;border-radius:10px;overflow:hidden;margin-bottom:1.5rem;height:36px}
+.tbar-phase{display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;color:#fff;gap:5px;position:relative;transition:.2s}
+.tbar-sep{width:2px;background:#0f1117;flex-shrink:0}
+
+/* Phase cards */
+.phases{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.phase-card{background:#1a1d27;border-radius:13px;overflow:hidden;border:1px solid #2e3250}
+.phase-card.full-width{grid-column:span 2}
+.phase-header{padding:.85rem 1.1rem .65rem;border-bottom:1px solid #2e3250}
+.phase-num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:.72rem;font-weight:800;color:#fff;margin-right:6px;vertical-align:middle}
+.phase-title{font-size:.92rem;font-weight:700;color:#e2e8f0;display:inline}
+.phase-weeks{float:right;font-size:.72rem;color:#6b7280;margin-top:2px}
+.phase-body{padding:.85rem 1.1rem}
+
+/* Task groups */
+.task-group{margin-bottom:.85rem}
+.task-group:last-child{margin-bottom:0}
+.task-group-title{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.4rem;display:flex;align-items:center;gap:5px}
+.tasks{display:flex;flex-direction:column;gap:3px}
+.task{display:flex;align-items:flex-start;gap:6px;font-size:.8rem;color:#d1d5db;line-height:1.45;padding:2px 0}
+.task-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
+
+/* Badges */
+.badge{display:inline-block;padding:1px 7px;border-radius:999px;font-size:.65rem;font-weight:700;margin-left:4px;vertical-align:middle}
+.b-fix{background:rgba(239,68,68,.2);color:#f87171;border:1px solid rgba(239,68,68,.3)}
+.b-new{background:rgba(52,211,153,.15);color:#34d399;border:1px solid rgba(52,211,153,.25)}
+.b-scrap{background:rgba(251,191,36,.12);color:#fbbf24;border:1px solid rgba(251,191,36,.25)}
+.b-native{background:rgba(168,85,247,.15);color:#c084fc;border:1px solid rgba(168,85,247,.25)}
+
+/* Deliverable box */
+.deliverable{background:#0d1117;border-radius:8px;padding:.6rem .85rem;margin-top:.85rem;border-left:3px solid}
+.deliverable .del-title{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem}
+.deliverable .del-items{display:flex;flex-wrap:wrap;gap:.35rem}
+.deliverable .del-item{background:#1a1d27;border-radius:5px;padding:2px 8px;font-size:.75rem;color:#c7d2fe}
+
+/* Parallel indicator */
+.parallel-badge{background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.3);color:#60a5fa;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:5px;display:inline-block;margin-bottom:.6rem}
+
+/* DB schema preview */
+.schema-preview{background:#0d1117;border-radius:8px;padding:.6rem .85rem;font-family:'Fira Code',monospace;font-size:.72rem;color:#cdd6f4;margin-top:.5rem;line-height:1.6}
+.schema-table{color:#60a5fa;font-weight:700}
+.schema-field{color:#9ca3af}
+.schema-type{color:#34d399}
+.schema-new{color:#fbbf24}
+</style>
+</head>
+<body>
+
+<h2>Detailed Phase Plan — 12 Weeks</h2>
+<p class="subtitle">Approach 2 · API-First Parallel · Bugs fixed week 1 · Desktop + Mobile run simultaneously from week 6</p>
+
+<!-- Timeline bar -->
+<div class="timeline-bar">
+  <div class="tbar-phase" style="background:#dc2626;flex:1.2">🔧 P1 · Fix</div>
+  <div class="tbar-sep"></div>
+  <div class="tbar-phase" style="background:#ea580c;flex:2">🏗 P2 · API + Features</div>
+  <div class="tbar-sep"></div>
+  <div class="tbar-phase" style="background:#2563eb;flex:2">🖥 P3 · Desktop</div>
+  <div class="tbar-sep"></div>
+  <div class="tbar-phase" style="background:#7c3aed;flex:2">📱 P4 · Mobile</div>
+  <div class="tbar-sep"></div>
+  <div class="tbar-phase" style="background:#059669;flex:1">✅ P5 · QA</div>
+</div>
+
+<div class="phases">
+
+  <!-- PHASE 1 -->
+  <div class="phase-card">
+    <div class="phase-header">
+      <span class="phase-num" style="background:#dc2626">1</span>
+      <span class="phase-title">Bug Fixes + Web Polish</span>
+      <span class="phase-weeks">Week 1–2</span>
+    </div>
+    <div class="phase-body">
+      <div class="task-group">
+        <div class="task-group-title" style="color:#f87171">🔴 Critical Bug Fixes</div>
+        <div class="tasks">
+          <div class="task"><div class="task-dot" style="background:#f87171"></div><b>ProcessImageAnalysis.php:441</b> — fix wrong config key <code style="background:#1f2937;padding:1px 4px;border-radius:3px">services.python_ai.url</code> → <code style="background:#1f2937;padding:1px 4px;border-radius:3px">ai.api_url</code></div>
+          <div class="task"><div class="task-dot" style="background:#f87171"></div><b>MediaController.php:47</b> — add Range header validation before regex access</div>
+          <div class="task"><div class="task-dot" style="background:#f87171"></div><b>.env</b> — switch DB_CONNECTION from sqlite to pgsql, add all missing AI env vars</div>
+          <div class="task"><div class="task-dot" style="background:#f87171"></div><b>Create app/Listeners/ImageProcessedListener.php</b> — wire ImageProcessed event for real-time notifications</div>
+          <div class="task"><div class="task-dot" style="background:#f87171"></div>Standardise all Python AI config references to <code style="background:#1f2937;padding:1px 4px;border-radius:3px">config('ai.api_url')</code></div>
+          <div class="task"><div class="task-dot" style="background:#f87171"></div>Implement <code style="background:#1f2937;padding:1px 4px;border-radius:3px">ArchiveFile::hasPassword()</code> real detection in ArchiveProcessor</div>
+          <div class="task"><div class="task-dot" style="background:#f87171"></div>Implement <code style="background:#1f2937;padding:1px 4px;border-radius:3px">CacheService::getStats()</code> with real hit/miss tracking</div>
+        </div>
+      </div>
+      <div class="task-group">
+        <div class="task-group-title" style="color:#818cf8">✨ Web Polish</div>
+        <div class="tasks">
+          <div class="task"><div class="task-dot" style="background:#818cf8"></div>Unified Hub navigation — update sidebar to Photos / Search / Files / People / More</div>
+          <div class="task"><div class="task-dot" style="background:#818cf8"></div>Add memories/highlights strip to gallery home (date-grouped, animated)</div>
+          <div class="task"><div class="task-dot" style="background:#818cf8"></div>Unified search bar (photos + files + people in one query)</div>
+          <div class="task"><div class="task-dot" style="background:#818cf8"></div>Files tab — smart filter views (Photos / Videos / Documents / Audio)</div>
+          <div class="task"><div class="task-dot" style="background:#818cf8"></div>Star / trash / restore UI on media items</div>
+        </div>
+      </div>
+      <div class="deliverable" style="border-color:#dc2626">
+        <div class="del-title" style="color:#f87171">Phase 1 Deliverables</div>
+        <div class="del-items">
+          <div class="del-item">Production-safe web app</div>
+          <div class="del-item">All 7 bugs fixed</div>
+          <div class="del-item">Polished Unified Hub web UI</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 2 -->
+  <div class="phase-card">
+    <div class="phase-header">
+      <span class="phase-num" style="background:#ea580c">2</span>
+      <span class="phase-title">API Layer + New Features</span>
+      <span class="phase-weeks">Week 3–5</span>
+    </div>
+    <div class="phase-body">
+      <div class="task-group">
+        <div class="task-group-title" style="color:#fbbf24">👥 Multi-User + Family Sharing</div>
+        <div class="tasks">
+          <div class="task"><div class="task-dot" style="background:#fbbf24"></div>New migrations: <code style="background:#1f2937;padding:1px 4px;border-radius:3px">user_roles</code>, <code style="background:#1f2937;padding:1px 4px;border-radius:3px">families</code>, <code style="background:#1f2937;padding:1px 4px;border-radius:3px">family_members</code>, <code style="background:#1f2937;padding:1px 4px;border-radius:3px">storage_quotas</code></div>
+          <div class="task"><div class="task-dot" style="background:#fbbf24"></div>User invite system — email invites, role assignment (admin / member)</div>
+          <div class="task"><div class="task-dot" style="background:#fbbf24"></div>Per-user media library — each user sees only their own files by default</div>
+          <div class="task"><div class="task-dot" style="background:#fbbf24"></div>Family pool — shared quota, shared album view</div>
+          <div class="task"><div class="task-dot" style="background:#fbbf24"></div>Storage quota enforcement on upload — reject when over limit</div>
+          <div class="task"><div class="task-dot" style="background:#fbbf24"></div>Admin dashboard — all users, usage stats, quota management</div>
+        </div>
+      </div>
+      <div class="task-group">
+        <div class="task-group-title" style="color:#34d399">🔗 Sharing + Drive Features</div>
+        <div class="tasks">
+          <div class="task"><div class="task-dot" style="background:#34d399"></div>New migration: <code style="background:#1f2937;padding:1px 4px;border-radius:3px">share_links</code> (token, resource_id, expiry, password_hash, max_views)</div>
+          <div class="task"><div class="task-dot" style="background:#34d399"></div>ShareLinkService — generate, validate, revoke shareable links</div>
+          <div class="task"><div class="task-dot" style="background:#34d399"></div>Public share viewer — unauthenticated route for shared links</div>
+          <div class="task"><div class="task-dot" style="background:#34d399"></div>Shared albums — cross-user album with comment support</div>
+          <div class="task"><div class="task-dot" style="background:#34d399"></div>Any file type upload — remove media-only restriction, store as GenericFile type</div>
+          <div class="task"><div class="task-dot" style="background:#34d399"></div>Trash with 30-day retention policy (scheduled purge)</div>
+        </div>
+      </div>
+      <div class="task-group">
+        <div class="task-group-title" style="color:#60a5fa">⚡ Sync Infrastructure</div>
+        <div class="tasks">
+          <div class="task"><div class="task-dot" style="background:#60a5fa"></div>Install + configure <b>Laravel Reverb</b> (WebSocket server) for real-time events</div>
+          <div class="task"><div class="task-dot" style="background:#60a5fa"></div>Dedup API — SHA256 hash check endpoint (skip if already uploaded)</div>
+          <div class="task"><div class="task-dot" style="background:#60a5fa"></div>Resumable upload API — chunked upload with offset tracking</div>
+          <div class="task"><div class="task-dot" style="background:#60a5fa"></div>Device sync state API — track last-synced timestamp per device</div>
+          <div class="task"><div class="task-dot" style="background:#60a5fa"></div>New migration: <code style="background:#1f2937;padding:1px 4px;border-radius:3px">device_sync_states</code> (device_id, user_id, last_sync_at, platform)</div>
+        </div>
+      </div>
+      <div class="deliverable" style="border-color:#ea580c">
+        <div class="del-title" style="color:#f97316">Phase 2 Deliverables</div>
+        <div class="del-items">
+          <div class="del-item">Multi-user auth</div>
+          <div class="del-item">Family sharing</div>
+          <div class="del-item">Shareable links</div>
+          <div class="del-item">Any file upload</div>
+          <div class="del-item">Resumable API</div>
+          <div class="del-item">Reverb WebSocket</div>
+          <div class="del-item">Admin panel</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 3 + 4 PARALLEL HEADER -->
+  <div class="phase-card full-width" style="background:rgba(37,99,235,.05);border-color:rgba(37,99,235,.3)">
+    <div class="phase-header" style="border-color:rgba(37,99,235,.2)">
+      <span class="phase-num" style="background:linear-gradient(135deg,#2563eb,#7c3aed)">3+4</span>
+      <span class="phase-title">NativePHP Desktop + Mobile — Run in Parallel</span>
+      <span class="phase-weeks">Week 6–11</span>
+    </div>
+    <div class="phase-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
+
+        <!-- Desktop -->
+        <div>
+          <div class="parallel-badge">🖥 Desktop Track — NativePHP + Electron</div>
+          <div class="task-group">
+            <div class="task-group-title" style="color:#2dd4bf">Setup + Shell</div>
+            <div class="tasks">
+              <div class="task"><div class="task-dot" style="background:#2dd4bf"></div>Install <code style="background:#1f2937;padding:1px 4px;border-radius:3px">nativephp/electron</code> — configure app bundle, icons, entitlements</div>
+              <div class="task"><div class="task-dot" style="background:#2dd4bf"></div>NativeWindow — open web app in frameless chromium window</div>
+              <div class="task"><div class="task-dot" style="background:#2dd4bf"></div>System tray icon — sync spinner, quick upload, open app, quit</div>
+              <div class="task"><div class="task-dot" style="background:#2dd4bf"></div>Native menu bar — File, Edit, View, Sync, Help</div>
+              <div class="task"><div class="task-dot" style="background:#2dd4bf"></div>Auto-launch on login toggle</div>
+            </div>
+          </div>
+          <div class="task-group">
+            <div class="task-group-title" style="color:#2dd4bf">Folder Watch + Auto-Import</div>
+            <div class="tasks">
+              <div class="task"><div class="task-dot" style="background:#2dd4bf"></div>FolderWatcher service — watch configured directories (chokidar)</div>
+              <div class="task"><div class="task-dot" style="background:#2dd4bf"></div>On new file detected → hash check → queue upload job</div>
+              <div class="task"><div class="task-dot" style="background:#2dd4bf"></div>Desktop settings UI — add/remove watched folders, exclude patterns</div>
+              <div class="task"><div class="task-dot" style="background:#2dd4bf"></div>Upload queue with progress in tray tooltip</div>
+              <div class="task"><div class="task-dot" style="background:#2dd4bf"></div>Offline queue — retry when server back online</div>
+            </div>
+          </div>
+          <div class="task-group">
+            <div class="task-group-title" style="color:#2dd4bf">Native Integrations</div>
+            <div class="tasks">
+              <div class="task"><div class="task-dot" style="background:#2dd4bf"></div>Native file open dialog for manual upload</div>
+              <div class="task"><div class="task-dot" style="background:#2dd4bf"></div>Native notifications — upload complete, processing done</div>
+              <div class="task"><div class="task-dot" style="background:#2dd4bf"></div>Drag files onto tray icon → upload</div>
+              <div class="task"><div class="task-dot" style="background:#2dd4bf"></div>Server URL config (point to self-hosted instance)</div>
+              <div class="task"><div class="task-dot" style="background:#2dd4bf"></div>Build + sign for Mac (.dmg), Windows (.exe), Linux (.AppImage)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mobile -->
+        <div>
+          <div class="parallel-badge">📱 Mobile Track — NativePHP Mobile + Capacitor</div>
+          <div class="task-group">
+            <div class="task-group-title" style="color:#c084fc">Setup + Auth</div>
+            <div class="tasks">
+              <div class="task"><div class="task-dot" style="background:#c084fc"></div>Delete React Native app — create new NativePHP Mobile project</div>
+              <div class="task"><div class="task-dot" style="background:#c084fc"></div>Configure Capacitor for iOS + Android builds</div>
+              <div class="task"><div class="task-dot" style="background:#c084fc"></div>Server URL onboarding screen — enter self-hosted URL on first launch</div>
+              <div class="task"><div class="task-dot" style="background:#c084fc"></div>Login / Register screens using existing Sanctum API</div>
+              <div class="task"><div class="task-dot" style="background:#c084fc"></div>Biometric unlock (FaceID / Fingerprint) via Capacitor plugin</div>
+            </div>
+          </div>
+          <div class="task-group">
+            <div class="task-group-title" style="color:#c084fc">Camera Backup + Sync</div>
+            <div class="tasks">
+              <div class="task"><div class="task-dot" style="background:#c084fc"></div>Camera roll permission request + photo library access</div>
+              <div class="task"><div class="task-dot" style="background:#c084fc"></div>BackgroundSyncService — runs as iOS background task / Android foreground service</div>
+              <div class="task"><div class="task-dot" style="background:#c084fc"></div>WiFi detection — instant upload on WiFi, queue on cellular</div>
+              <div class="task"><div class="task-dot" style="background:#c084fc"></div>Dedup check before upload — skip already-backed-up photos</div>
+              <div class="task"><div class="task-dot" style="background:#c084fc"></div>Chunked resumable upload (5MB chunks, retry on failure)</div>
+              <div class="task"><div class="task-dot" style="background:#c084fc"></div>Offline queue with SQLite — persists across app restarts</div>
+              <div class="task"><div class="task-dot" style="background:#c084fc"></div>Push notification — "Backup complete: 47 photos uploaded"</div>
+            </div>
+          </div>
+          <div class="task-group">
+            <div class="task-group-title" style="color:#c084fc">Screens (Photos-First nav)</div>
+            <div class="tasks">
+              <div class="task"><div class="task-dot" style="background:#c084fc"></div><b>Photos tab</b> — memories strip + chronological grid, select mode, share</div>
+              <div class="task"><div class="task-dot" style="background:#c084fc"></div><b>Search tab</b> — unified search (semantic + text + face)</div>
+              <div class="task"><div class="task-dot" style="background:#c084fc"></div><b>Files tab</b> — Drive browser: folders, any file type, upload, share link</div>
+              <div class="task"><div class="task-dot" style="background:#c084fc"></div><b>People tab</b> — face clusters, name assignment, filter by person</div>
+              <div class="task"><div class="task-dot" style="background:#c084fc"></div><b>More tab</b> — Albums, Trash, Shared with me, Settings, Sync status</div>
+              <div class="task"><div class="task-dot" style="background:#c084fc"></div>Media viewer — swipe, zoom, info panel, delete, share, download</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div class="deliverable" style="border-color:#7c3aed;margin-top:.85rem">
+        <div class="del-title" style="color:#c084fc">Phase 3+4 Deliverables</div>
+        <div class="del-items">
+          <div class="del-item">Desktop .dmg / .exe / .AppImage</div>
+          <div class="del-item">System tray + folder watch</div>
+          <div class="del-item">iOS + Android .ipa / .apk</div>
+          <div class="del-item">Camera auto-backup</div>
+          <div class="del-item">Background sync</div>
+          <div class="del-item">Offline queue</div>
+          <div class="del-item">All 5 mobile screens</div>
+          <div class="del-item">Biometric unlock</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 5 -->
+  <div class="phase-card full-width">
+    <div class="phase-header">
+      <span class="phase-num" style="background:#059669">5</span>
+      <span class="phase-title">Integration QA + Ship</span>
+      <span class="phase-weeks">Week 12</span>
+    </div>
+    <div class="phase-body">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem">
+        <div class="task-group">
+          <div class="task-group-title" style="color:#34d399">Testing</div>
+          <div class="tasks">
+            <div class="task"><div class="task-dot" style="background:#34d399"></div>End-to-end sync test: photo taken on phone → appears on web + desktop</div>
+            <div class="task"><div class="task-dot" style="background:#34d399"></div>Multi-user isolation test — user A cannot see user B's files</div>
+            <div class="task"><div class="task-dot" style="background:#34d399"></div>Share link expiry + password test</div>
+            <div class="task"><div class="task-dot" style="background:#34d399"></div>Offline queue resume test — disconnect, add files, reconnect</div>
+          </div>
+        </div>
+        <div class="task-group">
+          <div class="task-group-title" style="color:#34d399">Bug Fixes</div>
+          <div class="tasks">
+            <div class="task"><div class="task-dot" style="background:#34d399"></div>Fix issues found in integration testing</div>
+            <div class="task"><div class="task-dot" style="background:#34d399"></div>Performance profiling — search + gallery load</div>
+            <div class="task"><div class="task-dot" style="background:#34d399"></div>Memory usage check on mobile</div>
+            <div class="task"><div class="task-dot" style="background:#34d399"></div>Desktop build signing (Gatekeeper / SmartScreen)</div>
+          </div>
+        </div>
+        <div class="task-group">
+          <div class="task-group-title" style="color:#34d399">Docs + Report Update</div>
+          <div class="tasks">
+            <div class="task"><div class="task-dot" style="background:#34d399"></div>Update CLAUDE.md with new architecture</div>
+            <div class="task"><div class="task-dot" style="background:#34d399"></div>Update PROJECT_STATUS_REPORT.md — all items resolved</div>
+            <div class="task"><div class="task-dot" style="background:#34d399"></div>Desktop install guide (dmg / exe)</div>
+            <div class="task"><div class="task-dot" style="background:#34d399"></div>Mobile sideload / TestFlight guide</div>
+          </div>
+        </div>
+        <div class="task-group">
+          <div class="task-group-title" style="color:#34d399">Ship</div>
+          <div class="tasks">
+            <div class="task"><div class="task-dot" style="background:#34d399"></div>Tag v2.0.0 release on git</div>
+            <div class="task"><div class="task-dot" style="background:#34d399"></div>Docker stack updated with Reverb service</div>
+            <div class="task"><div class="task-dot" style="background:#34d399"></div>start-production.sh updated</div>
+            <div class="task"><div class="task-dot" style="background:#34d399"></div>GitHub release with desktop binaries</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:1.25rem;background:rgba(5,150,105,.08);border:1px solid rgba(52,211,153,.2);border-radius:10px;padding:1rem;font-size:.83rem;color:#8892b0;line-height:1.6;text-align:center">
+  <strong style="color:#34d399">Does this phase plan look right?</strong> — If yes, I'll show the mobile screen designs next, then write the full spec doc.
+</div>
+</body>
+</html>

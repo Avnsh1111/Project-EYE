@@ -9,6 +9,7 @@ use App\Models\DocumentFile;
 use App\Models\AudioFile;
 use App\Models\ArchiveFile;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 
@@ -342,6 +343,7 @@ class MediaFileService
         $modelClass = $this->getModelClass($mediaType);
 
         return $modelClass::create([
+            'user_id' => Auth::id(),
             'file_path' => $fileData['path'],
             'original_filename' => $file->getClientOriginalName(),
             'file_size' => $file->getSize(),
@@ -380,12 +382,15 @@ class MediaFileService
      */
     public function convertToSharedPath(string $laravelPath, string $mediaType = 'image'): string
     {
+        // Configurable prefix: in Docker, points to /app/shared/; on host (Valet) it is
+        // the absolute storage/app/public/ path, making shared paths real filesystem paths.
+        $prefix = rtrim(config('ai.shared_prefix', storage_path('app/public')), '/') . '/';
+
         // Remove 'storage/app/public/{type}/' or 'public/{type}/' prefix
-        // Docker mounts ./storage/app/public to /app/shared
         $pattern = '#^(storage/app/)?public/(' . implode('|', array_keys(self::STORAGE_DIRECTORIES)) . ')/#';
         $relativePath = preg_replace($pattern, '', $laravelPath);
 
-        return '/app/shared/' . $mediaType . 's/' . $relativePath;
+        return $prefix . $mediaType . 's/' . $relativePath;
     }
 
     /**

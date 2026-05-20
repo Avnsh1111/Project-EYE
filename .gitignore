@@ -28,8 +28,18 @@ __pycache__/
 .Python
 env/
 venv/
+.venv/
+**/.venv/
 .env
 *.pyc
+
+# Node
+node_modules/
+**/node_modules/
+
+# Dylibs/binaries
+*.dylib
+*.a
 
 # Docker
 .docker-volumes/
